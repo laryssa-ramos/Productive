@@ -1,0 +1,48 @@
+@if (notifications.supported) {
+  <section class="reminder">
+    <p class="foot-title">Lembrete diário</p>
+
+    @if (notifications.permission() === 'denied') {
+      <p class="foot-hint">
+        As notificações estão bloqueadas para este site. Libere nas permissões do
+        navegador para poder ativar.
+      </p>
+    } @else if (notifications.active()) {
+      <div class="row">
+        <input
+          class="input time"
+          type="time"
+          [value]="notifications.time()"
+          (change)="onTime($event)"
+          aria-label="Horário do lembrete"
+        />
+        <button type="button" class="btn btn-sm" (click)="notifications.preview()">
+          Testar
+        </button>
+      </div>
+      <p class="foot-hint">
+        Chega às {{ notifications.time() }}, se o app estiver aberto. Com ele fechado o
+        navegador não avisa.
+      </p>
+      <button type="button" class="btn btn-ghost btn-sm full" (click)="notifications.disable()">
+        Desativar
+      </button>
+    } @else {
+      <div class="row">
+        <input
+          class="input time"
+          type="time"
+          [value]="notifications.time()"
+          (change)="onTime($event)"
+          aria-label="Horário do lembrete"
+        />
+        <button type="button" class="btn btn-sm" (click)="enable()" [disabled]="busy()">
+          Ativar
+        </button>
+      </div>
+      <p class="foot-hint">
+        Um resumo do que falta no dia, enquanto o app estiver aberto.
+      </p>
+    }
+  </section>
+}

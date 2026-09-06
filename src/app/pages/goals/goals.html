@@ -1,0 +1,296 @@
+<header class="page-head">
+  <div>
+    <h1>Metas diárias</h1>
+    <p class="page-sub">{{ todayLabel }}</p>
+  </div>
+  <button type="button" class="btn btn-primary" (click)="openNew()">Nova meta</button>
+</header>
+
+@if (formOpen()) {
+  <form class="card form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="form-grid">
+      <div class="field span-2">
+        <label class="label" for="name">Meta</label>
+        <input
+          id="name"
+          class="input"
+          formControlName="name"
+          placeholder="Ex.: Beber água, Ler antes de dormir, Treinar"
+          autocomplete="off"
+        />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <small class="error">Dê um nome para a meta.</small>
+        }
+      </div>
+
+      <div class="field">
+        <label class="label" for="category">Categoria</label>
+        <select id="category" class="select" formControlName="categoryId">
+          <option value="">Sem categoria</option>
+          @for (category of store.categories(); track category.id) {
+            <option [value]="category.id" [selected]="form.controls.categoryId.value === category.id">
+              {{ category.name }}
+            </option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <fieldset class="block">
+      <legend class="label">Como marcar</legend>
+      <label class="choice">
+        <input type="radio" formControlName="hasTarget" [value]="false" />
+        <span>
+          <strong>Só marcar como feita</strong>
+          <small>Um círculo para clicar, igual às tarefas.</small>
+        </span>
+      </label>
+      <label class="choice">
+        <input type="radio" formControlName="hasTarget" [value]="true" />
+        <span>
+          <strong>Com alvo do dia</strong>
+          <small>Conta o progresso — "2 de 3", "1,5 L de 2 L".</small>
+        </span>
+      </label>
+
+      @if (form.controls.hasTarget.value) {
+        <div class="target-row">
+          <div class="field">
+            <label class="label" for="target">Alvo</label>
+            <input id="target" class="input" type="number" min="1" formControlName="target" />
+          </div>
+          <div class="field">
+            <label class="label" for="unit">Unidade (opcional)</label>
+            <input
+              id="unit"
+              class="input"
+              formControlName="unit"
+              placeholder="L, min, páginas…"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+      }
+    </fieldset>
+
+    <fieldset class="block">
+      <legend class="label">Em quais dias ela vale</legend>
+      <div class="days">
+        @for (day of weekdays; track day.value) {
+          <button
+            type="button"
+            class="day-toggle"
+            [class.is-on]="days().includes(day.value)"
+            [attr.aria-pressed]="days().includes(day.value)"
+            [attr.title]="day.label"
+            (click)="toggleDay(day.value)"
+          >
+            {{ day.short }}
+          </button>
+        }
+        <button type="button" class="btn btn-ghost btn-sm" (click)="selectEveryDay()">
+          Todos
+        </button>
+      </div>
+      <small class="hint">
+        Dias fora dessa lista não contam nem quebram a sequência.
+      </small>
+    </fieldset>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" (click)="closeForm()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">
+        {{ editingId() ? 'Salvar meta' : 'Criar meta' }}
+      </button>
+    </div>
+  </form>
+}
+
+<section class="card today">
+  <div class="card-head">
+    <div>
+      <h2 class="card-title">Hoje</h2>
+      <p class="card-sub">
+        @if (store.goalSummary().scheduled > 0) {
+          {{ store.goalSummary().done }} de {{ store.goalSummary().scheduled }} cumpridas
+        } @else {
+          nenhuma meta vale para hoje
+        }
+      </p>
+    </div>
+    @if (store.goalSummary().scheduled > 0) {
+      <span class="today-percent">{{ store.goalSummary().percent }}%</span>
+    }
+  </div>
+
+  <ul class="today-list">
+    @for (row of store.goalsToday(); track row.goal.id) {
+      <li class="goal" [class.is-done]="row.done">
+        <div class="control">
+        @if (row.goal.target === 1) {
+          <button
+            type="button"
+            class="check"
+            [class.is-checked]="row.done"
+            (click)="toggle(row.goal)"
+            [attr.aria-pressed]="row.done"
+            [attr.aria-label]="(row.done ? 'Desmarcar ' : 'Marcar ') + row.goal.name"
+          >
+            @if (row.done) {
+              <span aria-hidden="true">✓</span>
+            }
+          </button>
+        } @else {
+          <div class="counter">
+            <button
+              type="button"
+              class="step"
+              (click)="bump(row.goal, -1)"
+              [disabled]="row.value === 0"
+              [attr.aria-label]="'Diminuir ' + row.goal.name"
+            >
+              −
+            </button>
+            <span class="counter-value">{{ row.value }}<small>/{{ row.goal.target }}</small></span>
+            <button
+              type="button"
+              class="step"
+              (click)="bump(row.goal, 1)"
+              [disabled]="row.done"
+              [attr.aria-label]="'Aumentar ' + row.goal.name"
+            >
+              +
+            </button>
+          </div>
+        }
+        </div>
+
+        <div class="goal-body">
+          <p class="goal-name">
+            {{ row.goal.name }}
+            @if (row.goal.unit) {
+              <span class="unit">({{ row.goal.unit }})</span>
+            }
+          </p>
+          <div class="goal-meta">
+            <span class="badge">
+              <span class="dot" [style.background]="row.color"></span>
+              {{ row.categoryName }}
+            </span>
+            @if (row.streak > 0) {
+              <span class="badge streak">
+                {{ row.streak }} {{ row.streak === 1 ? 'dia seguido' : 'dias seguidos' }}
+              </span>
+            }
+          </div>
+          @if (row.goal.target > 1) {
+            <div class="bar">
+              <div class="bar-fill" [style.width.%]="row.percent" [style.background]="row.color"></div>
+            </div>
+          }
+        </div>
+      </li>
+    } @empty {
+      <li>
+        <p class="empty">
+          @if (store.activeGoals().length === 0) {
+            Nenhuma meta ainda. Crie a primeira em <strong>Nova meta</strong>.
+          } @else {
+            Nenhuma das suas metas vale para hoje. Aproveita.
+          }
+        </p>
+      </li>
+    }
+  </ul>
+</section>
+
+@if (rows().length > 0) {
+  <section class="card">
+    <div class="card-head">
+      <h2 class="card-title">Suas metas</h2>
+      <span class="card-sub">últimos 14 dias</span>
+    </div>
+
+    <ul class="goal-list">
+      @for (row of rows(); track row.goal.id) {
+        <li class="row">
+          <div class="row-info">
+            <p class="goal-name">
+              <span class="dot" [style.background]="row.color"></span>
+              {{ row.goal.name }}
+            </p>
+            <p class="row-sub">
+              {{ row.daysLabel }}
+              @if (row.goal.target > 1) {
+                · alvo {{ row.goal.target }} {{ row.goal.unit }}
+              }
+            </p>
+          </div>
+
+          <div class="history" role="img"
+            [attr.aria-label]="'Histórico de ' + row.goal.name + ' nos últimos 14 dias'">
+            @for (day of row.history; track day.date) {
+              <span
+                class="cell"
+                [class.is-off]="!day.scheduled"
+                [class.is-done]="day.done"
+                [class.is-partial]="day.scheduled && !day.done && day.value > 0"
+                [style.--cell]="row.color"
+                [attr.title]="dayTitle(day.date, day.value, row.goal.target, day.scheduled)"
+              ></span>
+            }
+          </div>
+
+          <div class="streaks">
+            <span class="streak-now">{{ row.streak }}</span>
+            <span class="streak-label">atual · recorde {{ row.best }}</span>
+          </div>
+
+          <div class="row-actions">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="openEdit(row.goal)">
+              Editar
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="archive(row.goal)">
+              Arquivar
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+@if (store.archivedGoals().length > 0) {
+  <section class="card">
+    <div class="card-head">
+      <h2 class="card-title">Arquivadas</h2>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="showArchived.set(!showArchived())">
+        {{ showArchived() ? 'Esconder' : 'Mostrar' }} ({{ store.archivedGoals().length }})
+      </button>
+    </div>
+
+    @if (showArchived()) {
+      <ul class="goal-list">
+        @for (goal of store.archivedGoals(); track goal.id) {
+          <li class="row">
+            <div class="row-info">
+              <p class="goal-name">
+                <span class="dot" [style.background]="colorOf(goal)"></span>
+                {{ goal.name }}
+              </p>
+              <p class="row-sub">{{ daysLabel(goal) }}</p>
+            </div>
+            <div class="row-actions">
+              <button type="button" class="btn btn-sm" (click)="store.restoreGoal(goal.id)">
+                Reativar
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" (click)="remove(goal)">
+                Excluir
+              </button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}

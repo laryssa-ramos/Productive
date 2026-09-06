@@ -1,14 +1,16 @@
 import { Component, inject, signal, viewChild, ElementRef } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ProductivityStore } from './core/productivity-store';
+import { NotificationService } from './core/notifications';
 import { SyncService } from './core/sync';
 import { ThemeService } from './core/theme';
+import { ReminderPanel } from './shared/reminder-panel/reminder-panel';
 import { SyncPanel } from './shared/sync-panel/sync-panel';
 import { toIsoDate } from './core/date-utils';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, SyncPanel],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, SyncPanel, ReminderPanel],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -16,6 +18,8 @@ export class App {
   protected readonly store = inject(ProductivityStore);
   protected readonly theme = inject(ThemeService);
   protected readonly sync = inject(SyncService);
+  // Injetado para o serviço existir desde o início: ele cuida do badge do ícone.
+  private readonly notifications = inject(NotificationService);
 
   protected readonly menuOpen = signal(false);
   protected readonly notice = signal<string | null>(null);

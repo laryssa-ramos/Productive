@@ -34,6 +34,22 @@
           <span class="nav-count">{{ store.summary().open }}</span>
         }
       </a>
+      <a routerLink="/sorteio" routerLinkActive="is-active" class="nav-link">
+        <span class="nav-icon" aria-hidden="true">✦</span>
+        Sorteio
+        @if (store.pendingSummary().open > 0) {
+          <span class="nav-count">{{ store.pendingSummary().open }}</span>
+        }
+      </a>
+      <a routerLink="/metas" routerLinkActive="is-active" class="nav-link">
+        <span class="nav-icon" aria-hidden="true">◎</span>
+        Metas
+        @if (store.goalSummary().scheduled > 0) {
+          <span class="nav-count">
+            {{ store.goalSummary().done }}/{{ store.goalSummary().scheduled }}
+          </span>
+        }
+      </a>
       <a routerLink="/categorias" routerLinkActive="is-active" class="nav-link">
         <span class="nav-icon" aria-hidden="true">◆</span>
         Categorias
@@ -45,6 +61,8 @@
       <button type="button" class="btn btn-ghost btn-sm full" (click)="theme.toggle()">
         Tema: {{ theme.mode() === 'system' ? 'automático' : theme.mode() === 'dark' ? 'escuro' : 'claro' }}
       </button>
+
+      <app-reminder-panel />
 
       <app-sync-panel />
 

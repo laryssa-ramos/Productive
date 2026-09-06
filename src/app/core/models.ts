@@ -22,10 +22,63 @@ export interface Task {
   completedAt: string | null;
 }
 
+/**
+ * Meta diária: diferente de uma tarefa, ela não é concluída de vez — volta nos
+ * dias em que vale e o que importa é a constância.
+ */
+export interface Goal {
+  id: string;
+  name: string;
+  categoryId: string | null;
+  /** Alvo do dia. 1 = meta simples, só marcar como feita. */
+  target: number;
+  /** Unidade mostrada ao lado do número ("L", "min", "páginas"). */
+  unit: string;
+  /** Dias da semana em que a meta vale: 0 = domingo … 6 = sábado. */
+  days: number[];
+  createdAt: string;
+  /** Arquivar em vez de excluir preserva o histórico já registrado. */
+  archivedAt: string | null;
+}
+
+/** Quanto foi feito de uma meta num dia. Só existe registro para dias tocados. */
+export interface GoalLog {
+  goalId: string;
+  /** yyyy-mm-dd */
+  date: string;
+  value: number;
+}
+
+/**
+ * Pendência solta: qualquer coisa que precisa ser feita mas não merece — nem
+ * comporta — categoria, prazo ou prioridade. Existe para ser despejada sem
+ * pensar, e é daqui que sai o sorteio do dia.
+ */
+export interface PendingItem {
+  id: string;
+  text: string;
+  createdAt: string;
+  doneAt: string | null;
+  /** Última vez que foi sorteada — usado para não repetir a mesma seguidamente. */
+  lastDrawnAt: string | null;
+  /** Dias (yyyy-mm-dd) em que você disse "agora não". */
+  skippedDates: string[];
+}
+
+/** A pendência escolhida para um dia. Fica gravada para não trocar a cada reload. */
+export interface DailyDraw {
+  date: string;
+  itemId: string;
+}
+
 export interface AppData {
   version: number;
   categories: Category[];
   tasks: Task[];
+  goals: Goal[];
+  goalLogs: GoalLog[];
+  pending: PendingItem[];
+  draw: DailyDraw | null;
   /** Momento da última alteração — é o que decide quem vence na sincronização. */
   updatedAt: string;
 }
@@ -63,3 +116,16 @@ export const CATEGORY_COLORS = [
 ] as const;
 
 export const UNCATEGORIZED_COLOR = '#8a8a85';
+
+/** Índice = getDay() do JavaScript: 0 é domingo. */
+export const WEEKDAYS = [
+  { value: 0, short: 'D', label: 'domingo' },
+  { value: 1, short: 'S', label: 'segunda' },
+  { value: 2, short: 'T', label: 'terça' },
+  { value: 3, short: 'Q', label: 'quarta' },
+  { value: 4, short: 'Q', label: 'quinta' },
+  { value: 5, short: 'S', label: 'sexta' },
+  { value: 6, short: 'S', label: 'sábado' },
+] as const;
+
+export const EVERY_DAY = [0, 1, 2, 3, 4, 5, 6];

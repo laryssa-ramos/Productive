@@ -3,16 +3,23 @@ import {
   AppData,
   Category,
   CATEGORY_COLORS,
+  DailyDraw,
+  EVERY_DAY,
+  Goal,
+  GoalLog,
+  PendingItem,
   STATUS_ORDER,
   Task,
   TaskPriority,
   TaskStatus,
   UNCATEGORIZED_COLOR,
 } from './models';
-import { addDays, daysUntil, todayIso } from './date-utils';
+import { addDays, daysUntil, fromIsoDate, todayIso } from './date-utils';
 
 const STORAGE_KEY = 'productive.data.v1';
-const DATA_VERSION = 1;
+const DATA_VERSION = 3;
+/** Dias de descanso antes de uma pendência poder ser sorteada de novo. */
+const RECENT_DRAW_DAYS = 3;
 /** Carimbo de uma instalação que ainda não foi tocada. */
 const EPOCH = new Date(0).toISOString();
 
@@ -37,6 +44,35 @@ export interface CategoryStat {
   name: string;
 }
 
+export interface GoalDraft {
+  name: string;
+  categoryId: string | null;
+  target: number;
+  unit: string;
+  days: number[];
+}
+
+/** Uma meta com o progresso de um dia específico já resolvido. */
+export interface GoalToday {
+  goal: Goal;
+  value: number;
+  /** 0–100, limitado a 100 mesmo quando passa do alvo. */
+  percent: number;
+  done: boolean;
+  streak: number;
+  color: string;
+  categoryName: string;
+}
+
+export interface GoalDay {
+  date: string;
+  scheduled: boolean;
+  value: number;
+  done: boolean;
+  /** 0–100 do alvo do dia. */
+  percent: number;
+}
+
 export interface ActivityDay {
   date: string;
   created: number;
@@ -55,10 +91,16 @@ function newId(): string {
 export class ProductivityStore {
   private readonly _categories = signal<Category[]>([]);
   private readonly _tasks = signal<Task[]>([]);
+  private readonly _goals = signal<Goal[]>([]);
+  private readonly _goalLogs = signal<GoalLog[]>([]);
+  private readonly _pending = signal<PendingItem[]>([]);
+  private readonly _draw = signal<DailyDraw | null>(null);
   private readonly _updatedAt = signal(EPOCH);
 
   readonly categories = this._categories.asReadonly();
   readonly tasks = this._tasks.asReadonly();
+  readonly goals = this._goals.asReadonly();
+  readonly pending = this._pending.asReadonly();
   readonly updatedAt = this._updatedAt.asReadonly();
 
   readonly categoryMap = computed(
@@ -70,6 +112,10 @@ export class ProductivityStore {
     if (stored) {
       this._categories.set(stored.categories);
       this._tasks.set(stored.tasks);
+      this._goals.set(stored.goals ?? []);
+      this._goalLogs.set(stored.goalLogs ?? []);
+      this._pending.set(stored.pending ?? []);
+      this._draw.set(stored.draw ?? null);
       this._updatedAt.set(stored.updatedAt ?? new Date().toISOString());
     } else {
       this._categories.set(seedCategories());
@@ -182,6 +228,10 @@ export class ProductivityStore {
       version: DATA_VERSION,
       categories: this._categories(),
       tasks: this._tasks(),
+      goals: this._goals(),
+      goalLogs: this._goalLogs(),
+      pending: this._pending(),
+      draw: this._draw(),
       updatedAt: this._updatedAt(),
     };
   }
@@ -193,6 +243,11 @@ export class ProductivityStore {
   applyRemote(data: AppData): void {
     this._categories.set(data.categories);
     this._tasks.set(data.tasks);
+    // Um aparelho ainda na versão 1 manda os dados sem metas.
+    this._goals.set(data.goals ?? []);
+    this._goalLogs.set(data.goalLogs ?? []);
+    this._pending.set(data.pending ?? []);
+    this._draw.set(data.draw ?? null);
     this._updatedAt.set(data.updatedAt);
   }
 
@@ -271,6 +326,362 @@ export class ProductivityStore {
     return removed;
   }
 
+  // ---------------------------------------------------------------- metas
+
+  private readonly logIndex = computed(() => {
+    const index = new Map<string, number>();
+    for (const log of this._goalLogs()) index.set(logKey(log.goalId, log.date), log.value);
+    return index;
+  });
+
+  readonly activeGoals = computed(() => this._goals().filter((goal) => goal.archivedAt === null));
+  readonly archivedGoals = computed(() => this._goals().filter((goal) => goal.archivedAt !== null));
+
+  /** Quanto já foi registrado de uma meta num dia. */
+  progressOf(goalId: string, date: string): number {
+    return this.logIndex().get(logKey(goalId, date)) ?? 0;
+  }
+
+  isScheduled(goal: Goal, date: string): boolean {
+    return goal.days.includes(fromIsoDate(date).getDay());
+  }
+
+  isMet(goal: Goal, date: string): boolean {
+    return this.progressOf(goal.id, date) >= goal.target;
+  }
+
+  /** Metas que valem hoje, com progresso e sequência já resolvidos. */
+  readonly goalsToday = computed<GoalToday[]>(() => {
+    const today = todayIso();
+    return this.activeGoals()
+      .filter((goal) => this.isScheduled(goal, today))
+      .map((goal) => {
+        const value = this.progressOf(goal.id, today);
+        const category = goal.categoryId ? this.categoryMap().get(goal.categoryId) : undefined;
+        return {
+          goal,
+          value,
+          percent: Math.min(100, Math.round((value / goal.target) * 100)),
+          done: value >= goal.target,
+          streak: this.streakOf(goal),
+          color: category?.color ?? UNCATEGORIZED_COLOR,
+          categoryName: category?.name ?? 'Sem categoria',
+        };
+      });
+  });
+
+  readonly goalSummary = computed(() => {
+    const rows = this.goalsToday();
+    const done = rows.filter((row) => row.done).length;
+    return {
+      scheduled: rows.length,
+      done,
+      open: rows.length - done,
+      percent: rows.length === 0 ? 0 : Math.round((done / rows.length) * 100),
+    };
+  });
+
+  /**
+   * Sequência atual em dias válidos da meta. Um dia em que ela não vale não conta
+   * nem quebra. O dia de hoje ainda em aberto também não quebra — só para de somar.
+   */
+  streakOf(goal: Goal): number {
+    const today = todayIso();
+    let cursor = this.isScheduled(goal, today) && !this.isMet(goal, today) ? addDays(today, -1) : today;
+    const floor = goal.createdAt.slice(0, 10);
+    let streak = 0;
+
+    while (cursor >= floor) {
+      if (this.isScheduled(goal, cursor)) {
+        if (!this.isMet(goal, cursor)) break;
+        streak++;
+      }
+      cursor = addDays(cursor, -1);
+    }
+    return streak;
+  }
+
+  /** Maior sequência já alcançada, para dar régua ao número atual. */
+  bestStreakOf(goal: Goal): number {
+    const today = todayIso();
+    let cursor = goal.createdAt.slice(0, 10);
+    let best = 0;
+    let running = 0;
+
+    while (cursor <= today) {
+      if (this.isScheduled(goal, cursor)) {
+        if (this.isMet(goal, cursor)) {
+          running++;
+          best = Math.max(best, running);
+        } else if (cursor !== today) {
+          // O dia de hoje ainda pode ser cumprido; não zera a contagem.
+          running = 0;
+        }
+      }
+      cursor = addDays(cursor, 1);
+    }
+    return best;
+  }
+
+  /** Os últimos `days` dias de uma meta, do mais antigo para o mais recente. */
+  historyOf(goal: Goal, days = 14): GoalDay[] {
+    const start = addDays(todayIso(), -(days - 1));
+    const history: GoalDay[] = [];
+
+    for (let i = 0; i < days; i++) {
+      const date = addDays(start, i);
+      const value = this.progressOf(goal.id, date);
+      history.push({
+        date,
+        scheduled: this.isScheduled(goal, date),
+        value,
+        done: value >= goal.target,
+        percent: Math.min(100, Math.round((value / goal.target) * 100)),
+      });
+    }
+    return history;
+  }
+
+  /** Define o progresso de um dia. Zero apaga o registro em vez de guardar 0. */
+  setProgress(goalId: string, date: string, value: number): void {
+    const goal = this._goals().find((item) => item.id === goalId);
+    if (!goal) return;
+
+    const clamped = Math.max(0, Math.min(goal.target, value));
+    this._goalLogs.update((logs) => {
+      const rest = logs.filter((log) => !(log.goalId === goalId && log.date === date));
+      return clamped === 0 ? rest : [...rest, { goalId, date, value: clamped }];
+    });
+    this.touch();
+  }
+
+  bumpGoal(goalId: string, date: string, delta: number): void {
+    this.setProgress(goalId, date, this.progressOf(goalId, date) + delta);
+  }
+
+  toggleGoal(goalId: string, date: string): void {
+    const goal = this._goals().find((item) => item.id === goalId);
+    if (!goal) return;
+    this.setProgress(goalId, date, this.isMet(goal, date) ? 0 : goal.target);
+  }
+
+  addGoal(draft: GoalDraft): Goal {
+    const goal: Goal = {
+      id: newId(),
+      name: draft.name.trim(),
+      categoryId: draft.categoryId,
+      target: Math.max(1, Math.round(draft.target)),
+      unit: draft.unit.trim(),
+      days: draft.days.length > 0 ? [...draft.days].sort() : [...EVERY_DAY],
+      createdAt: new Date().toISOString(),
+      archivedAt: null,
+    };
+    this._goals.update((goals) => [...goals, goal]);
+    this.touch();
+    return goal;
+  }
+
+  updateGoal(id: string, draft: GoalDraft): void {
+    this._goals.update((goals) =>
+      goals.map((goal) =>
+        goal.id === id
+          ? {
+              ...goal,
+              name: draft.name.trim(),
+              categoryId: draft.categoryId,
+              target: Math.max(1, Math.round(draft.target)),
+              unit: draft.unit.trim(),
+              days: draft.days.length > 0 ? [...draft.days].sort() : [...EVERY_DAY],
+            }
+          : goal,
+      ),
+    );
+    this.touch();
+  }
+
+  archiveGoal(id: string): void {
+    this._goals.update((goals) =>
+      goals.map((goal) =>
+        goal.id === id ? { ...goal, archivedAt: new Date().toISOString() } : goal,
+      ),
+    );
+    this.touch();
+  }
+
+  restoreGoal(id: string): void {
+    this._goals.update((goals) =>
+      goals.map((goal) => (goal.id === id ? { ...goal, archivedAt: null } : goal)),
+    );
+    this.touch();
+  }
+
+  /** Exclui de vez, junto com todo o histórico registrado. */
+  deleteGoal(id: string): void {
+    this._goals.update((goals) => goals.filter((goal) => goal.id !== id));
+    this._goalLogs.update((logs) => logs.filter((log) => log.goalId !== id));
+    this.touch();
+  }
+
+  // -------------------------------------------------------------- pendências
+
+  readonly openPending = computed(() => this._pending().filter((item) => item.doneAt === null));
+  readonly donePending = computed(() => this._pending().filter((item) => item.doneAt !== null));
+
+  /** Abertas que ainda podem sair hoje — descontando as adiadas nesta data. */
+  readonly eligibleToday = computed(() => {
+    const today = todayIso();
+    return this.openPending().filter((item) => !item.skippedDates.includes(today));
+  });
+
+  /** A pendência da vez. Null quando o sorteio de hoje não vale mais. */
+  readonly drawnToday = computed<PendingItem | null>(() => {
+    const draw = this._draw();
+    if (!draw || draw.date !== todayIso()) return null;
+    const item = this._pending().find((candidate) => candidate.id === draw.itemId);
+    return item && item.doneAt === null ? item : null;
+  });
+
+  readonly pendingSummary = computed(() => ({
+    open: this.openPending().length,
+    done: this.donePending().length,
+    available: this.eligibleToday().length,
+  }));
+
+  /** Sorteia se ainda não há uma escolhida para hoje. Idempotente. */
+  ensureDraw(): void {
+    if (this.drawnToday()) return;
+    const pick = this.pick();
+    if (pick) this.commitDraw(pick);
+  }
+
+  /** "Agora não": tira a atual da roda de hoje e puxa outra. */
+  spin(): void {
+    const current = this.drawnToday();
+    if (current) this.skipToday(current.id);
+
+    const pick = this.pick();
+    if (pick) {
+      this.commitDraw(pick);
+    } else {
+      this._draw.set(null);
+      this.touch();
+    }
+  }
+
+  addPending(text: string): PendingItem | null {
+    const clean = text.trim();
+    if (!clean) return null;
+
+    const item: PendingItem = {
+      id: newId(),
+      text: clean,
+      createdAt: new Date().toISOString(),
+      doneAt: null,
+      lastDrawnAt: null,
+      skippedDates: [],
+    };
+    this._pending.update((list) => [item, ...list]);
+    this.touch();
+    return item;
+  }
+
+  updatePending(id: string, text: string): void {
+    const clean = text.trim();
+    if (!clean) return;
+    this._pending.update((list) =>
+      list.map((item) => (item.id === id ? { ...item, text: clean } : item)),
+    );
+    this.touch();
+  }
+
+  completePending(id: string): void {
+    this._pending.update((list) =>
+      list.map((item) => (item.id === id ? { ...item, doneAt: new Date().toISOString() } : item)),
+    );
+    this.touch();
+  }
+
+  reopenPending(id: string): void {
+    this._pending.update((list) =>
+      list.map((item) => (item.id === id ? { ...item, doneAt: null } : item)),
+    );
+    this.touch();
+  }
+
+  deletePending(id: string): void {
+    this._pending.update((list) => list.filter((item) => item.id !== id));
+    if (this._draw()?.itemId === id) this._draw.set(null);
+    this.touch();
+  }
+
+  /**
+   * Move a pendência para a lista de tarefas. Ela sai daqui: a tarefa criada
+   * passa a ser o registro dela, para não existir a mesma coisa em dois lugares.
+   */
+  promotePending(id: string): Task | null {
+    const item = this._pending().find((candidate) => candidate.id === id);
+    if (!item) return null;
+
+    const task = this.addTask({
+      title: item.text,
+      notes: '',
+      categoryId: null,
+      status: 'todo',
+      priority: 'medium',
+      dueDate: null,
+    });
+    this.deletePending(id);
+    return task;
+  }
+
+  private skipToday(id: string): void {
+    const today = todayIso();
+    this._pending.update((list) =>
+      list.map((item) =>
+        item.id === id && !item.skippedDates.includes(today)
+          ? { ...item, skippedDates: [...item.skippedDates, today] }
+          : item,
+      ),
+    );
+  }
+
+  private commitDraw(item: PendingItem): void {
+    const now = new Date().toISOString();
+    this._draw.set({ date: todayIso(), itemId: item.id });
+    this._pending.update((list) =>
+      list.map((candidate) =>
+        candidate.id === item.id ? { ...candidate, lastDrawnAt: now } : candidate,
+      ),
+    );
+    this.touch();
+  }
+
+  private pick(): PendingItem | null {
+    const pool = this.eligibleToday();
+    if (pool.length === 0) return null;
+
+    // Afasta as sorteadas há pouco — mas só enquanto sobrar alternativa.
+    const rested = pool.filter(
+      (item) =>
+        item.lastDrawnAt === null ||
+        daysUntil(item.lastDrawnAt.slice(0, 10)) <= -RECENT_DRAW_DAYS,
+    );
+    const candidates = rested.length > 0 ? rested : pool;
+
+    // Quanto mais tempo parada, mais peso: o que está encalhado aparece mais.
+    const weights = candidates.map(
+      (item) => 1 + Math.max(0, -daysUntil(item.createdAt.slice(0, 10))),
+    );
+    const total = weights.reduce((sum, weight) => sum + weight, 0);
+
+    let roll = Math.random() * total;
+    for (let i = 0; i < candidates.length; i++) {
+      roll -= weights[i];
+      if (roll <= 0) return candidates[i];
+    }
+    return candidates[candidates.length - 1];
+  }
+
   // ---------------------------------------------------------------- categorias
 
   /** Primeira cor da paleta ainda não usada (volta a ciclar se todas estiverem). */
@@ -327,12 +738,20 @@ export class ProductivityStore {
     }
     this._categories.set(parsed.categories);
     this._tasks.set(parsed.tasks);
+    this._goals.set(parsed.goals ?? []);
+    this._goalLogs.set(parsed.goalLogs ?? []);
+    this._pending.set(parsed.pending ?? []);
+    this._draw.set(parsed.draw ?? null);
     this.touch();
   }
 
   resetAll(): void {
     this._categories.set(seedCategories());
     this._tasks.set([]);
+    this._goals.set([]);
+    this._goalLogs.set([]);
+    this._pending.set([]);
+    this._draw.set(null);
     this.touch();
   }
 
@@ -351,6 +770,10 @@ export class ProductivityStore {
       return null;
     }
   }
+}
+
+function logKey(goalId: string, date: string): string {
+  return `${goalId}|${date}`;
 }
 
 function completionStamp(task: Task, status: TaskStatus): string | null {

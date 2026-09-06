@@ -24,6 +24,15 @@ em vez de dar 404.
 - **Tarefas** (`/tarefas`): criar, editar, concluir e excluir. Busca por texto,
   filtros por categoria/situação/prioridade, ordenação e dois modos de exibição
   (agrupado por categoria ou lista corrida).
+- **Metas diárias** (`/metas`): o que se repete, em vez de se concluir de vez.
+  Cada meta escolhe em que dias da semana vale e se é só marcar como feita ou tem
+  um alvo numérico ("2 L", "30 min"). A tela mostra o que vale hoje, a sequência
+  atual, o recorde e um histórico dos últimos 14 dias. Arquivar preserva o
+  histórico; excluir apaga junto.
+- **Sorteio** (`/sorteio`): o lugar para despejar pendências soltas — só o texto,
+  sem categoria, prazo ou prioridade. O app escolhe uma por dia e mostra no painel,
+  para você fazer em vez de decidir. "Agora não" tira aquela da roda só de hoje;
+  "Virar tarefa" promove a pendência à lista de tarefas quando ela cresce.
 - **Categorias** (`/categorias`): criar as suas próprias categorias com nome e cor.
   Excluir uma categoria não apaga as tarefas — elas ficam como "Sem categoria".
 
@@ -79,6 +88,34 @@ deles offline, faz o último a sincronizar sobrescrever o outro. Para uso pessoa
 um trade-off consciente: mesclar campo a campo exigiria bem mais máquina do que o
 problema pede.
 
+## Lembretes e notificações
+
+No rodapé do menu há um **lembrete diário**: você escolhe o horário, autoriza as
+notificações e o app avisa o que falta no dia — a pendência da vez, as metas não
+cumpridas e as tarefas vencendo. Se não houver nada a dizer, ele não interrompe.
+
+O ícone do app instalado também mostra um **número** com o que falta do dia, nas
+plataformas que suportam a Badging API.
+
+**A limitação, sem rodeios:** isso só funciona com o app aberto (inclusive em
+segundo plano, com a aba viva). Com o app fechado, o navegador não dispara nada.
+A API que permitiria agendar uma notificação local sem servidor
+([Notification Triggers](https://developer.chrome.com/docs/web-platform/notification-triggers))
+foi abandonada pelo Google, então não existe meio-termo.
+
+Para avisar com o app fechado seria preciso Web Push: chaves VAPID, uma tabela de
+inscrições, uma Edge Function no Supabase que envia e um `pg_cron` disparando no
+horário. Duas ressalvas antes de encarar isso: no iPhone só funciona com o app
+instalado na tela de início, e um projeto Supabase no plano free pausa após uma
+semana de inatividade — o cron para justamente depois dos dias em que o lembrete
+seria mais útil.
+
+Implementação em `src/app/core/notifications.ts`: um tique de um minuto confere se
+deu a hora, com janela de tolerância de 2 horas (abrir o app às 22h não dispara um
+lembrete marcado para as 9h) e uma trava por dia para não repetir. A notificação
+sai pelo service worker quando ele existe, que é o caminho confiável no celular, e
+o clique abre o painel.
+
 ## Instalar no celular
 
 O app é uma PWA. Abra o endereço no celular e use "Adicionar à tela de início"
@@ -96,14 +133,18 @@ src/app/
     models.ts               tipos, rótulos e a paleta de cores das categorias
     date-utils.ts           datas em yyyy-mm-dd, sempre no fuso local
     productivity-store.ts   estado da aplicação (signals) + persistência local
+    notifications.ts        lembrete diário e badge no ícone
     sync.ts                 espelhamento com o Supabase (opcional)
     supabase-config.ts      credenciais do projeto Supabase
     theme.ts                tema claro/escuro/automático
   pages/
     dashboard/              painel
     tasks/                  lista e formulário de tarefas
+    goals/                  metas diárias, sequências e histórico
+    draw/                   pendências soltas e o sorteio do dia
     categories/             CRUD de categorias
   shared/
+    reminder-panel/         lembrete diário no rodapé do menu
     sync-panel/             login por e-mail e estado da sincronização
   app.*                     casca: menu lateral, backup, rotas
 docs/supabase.sql           tabela e políticas de acesso do banco
@@ -112,6 +153,22 @@ docs/supabase.sql           tabela e políticas de acesso do banco
 O `ProductivityStore` é a fonte única de verdade: expõe signals para leitura,
 `computed` para as estatísticas do painel e espelha tudo no localStorage a cada
 mudança. As páginas não guardam estado próprio além de filtros e formulários.
+
+As metas guardam só o que foi registrado: existe uma linha em `goalLogs` por
+dia tocado, e a ausência de linha significa zero. Sequência e recorde são
+calculados na hora a partir desse histórico, contando apenas os dias em que a
+meta vale — um domingo não quebra a sequência de uma meta de dias úteis, e o dia
+de hoje ainda em aberto também não.
+
+O sorteio não é aleatório puro. Ele evita repetir uma pendência sorteada nos
+últimos 3 dias (desde que haja alternativa) e dá mais peso ao que está parado há
+mais tempo, para o que está encalhado aparecer mais. A escolha do dia fica
+gravada em `draw`, então recarregar a página não troca a sugestão — só o botão
+"agora não" troca, e a recusa vale apenas para aquele dia.
+
+O formato salvo está na versão 3. Dados gravados nas versões anteriores continuam
+sendo lidos: os campos que faltam entram vazios, tanto no localStorage quanto no
+que chega da nuvem.
 
 As cores das categorias vêm de uma paleta categórica validada para daltonismo —
 por isso a escolha é feita entre oito opções fixas, e não num seletor livre.

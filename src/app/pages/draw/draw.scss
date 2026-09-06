@@ -1,0 +1,217 @@
+:host {
+  display: block;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.page-head {
+  margin-bottom: 18px;
+
+  h1 {
+    font-size: 22px;
+  }
+}
+
+.page-sub {
+  margin: 2px 0 0;
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------------------ captura */
+
+.capture {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 14px;
+
+  .input {
+    flex: 1;
+    min-height: 38px;
+  }
+}
+
+/* -------------------------------------------------------------- a da vez */
+
+.turn {
+  padding: 28px 24px;
+  margin-bottom: 14px;
+  text-align: center;
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: linear-gradient(var(--accent-soft), var(--surface) 70%);
+}
+
+.turn-label {
+  margin: 0;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.turn-text {
+  margin: 10px auto 20px;
+  max-width: 30ch;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.turn-empty {
+  margin: 10px auto 0;
+  max-width: 46ch;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.turn-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.turn-hint {
+  margin: 14px 0 0;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+/* O giro: a nova pendência entra deslizando, dando a sensação de roleta. */
+.turn.is-spinning .turn-text {
+  animation: roll 420ms ease;
+}
+
+@keyframes roll {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turn.is-spinning .turn-text {
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------------------------- fila */
+
+.list {
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+
+  & + .item {
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+  }
+
+  &:hover {
+    background: var(--surface-2);
+  }
+
+  &:hover .item-actions,
+  &:focus-within .item-actions {
+    opacity: 1;
+  }
+
+  &.is-current {
+    background: var(--accent-soft);
+  }
+}
+
+.check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  font-size: 11px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--good);
+    background: color-mix(in srgb, var(--good) 18%, transparent);
+  }
+
+  &.is-checked {
+    border-color: var(--good);
+    background: var(--good);
+    cursor: default;
+  }
+}
+
+.item-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.current {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+  background: transparent;
+}
+
+.item-actions {
+  display: flex;
+  gap: 2px;
+  flex: none;
+  opacity: 0.3;
+  transition: opacity 120ms;
+}
+
+.item.is-done {
+  .item-text {
+    color: var(--text-3);
+    text-decoration: line-through;
+  }
+}
+
+.toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  margin: 0;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .item-actions {
+    opacity: 1;
+  }
+
+  .turn-text {
+    font-size: 20px;
+  }
+}

@@ -2,7 +2,9 @@ import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ProductivityStore } from '../../core/productivity-store';
 import { describeDueDate, fromIsoDate, todayIso } from '../../core/date-utils';
-import { PRIORITY_LABELS, STATUS_LABELS, Task } from '../../core/models';
+import { PRIORITY_LABELS, STATUS_LABELS, Task, TaskPriority } from '../../core/models';
+
+const PRIORITY_WEIGHT: Record<TaskPriority, number> = { high: 0, medium: 1, low: 2 };
 
 @Component({
   selector: 'app-dashboard',
@@ -14,6 +16,11 @@ export class DashboardPage {
   protected readonly store = inject(ProductivityStore);
   protected readonly statusLabels = STATUS_LABELS;
   protected readonly priorityLabels = PRIORITY_LABELS;
+
+  constructor() {
+    // Abrir o painel já basta para existir uma pendência escolhida para hoje.
+    this.store.ensureDraw();
+  }
 
   protected readonly today = new Date().toLocaleDateString('pt-BR', {
     weekday: 'long',
@@ -58,10 +65,38 @@ export class DashboardPage {
     }));
   });
 
-  protected readonly focus = computed(() => [
-    ...this.store.overdue(),
-    ...this.store.upcoming(),
-  ].slice(0, 6));
+  /** Metas de hoje só com o que o painel precisa mostrar. */
+  protected readonly goalsToday = computed(() =>
+    this.store.goalsToday().map((row) => ({
+      id: row.goal.id,
+      name: row.goal.name,
+      done: row.done,
+      streak: row.streak,
+      color: row.color,
+      percent: row.percent,
+      label: row.goal.target === 1 ? '' : `${row.value}/${row.goal.target} ${row.goal.unit}`.trim(),
+    })),
+  );
+
+  /**
+   * O que fazer agora: primeiro o que tem prazo apertado, depois o que já está
+   * em andamento e o resto por prioridade — para a lista não ficar vazia só
+   * porque nada tem data marcada.
+   */
+  protected readonly focus = computed(() => {
+    const dated = [...this.store.overdue(), ...this.store.upcoming()];
+    const seen = new Set(dated.map((task) => task.id));
+
+    const rest = this.store
+      .tasks()
+      .filter((task) => task.status !== 'done' && !seen.has(task.id))
+      .sort((a, b) => {
+        if (a.status !== b.status) return a.status === 'doing' ? -1 : 1;
+        return PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority];
+      });
+
+    return [...dated, ...rest].slice(0, 8);
+  });
 
   protected dueLabel(task: Task): string {
     return task.dueDate ? describeDueDate(task.dueDate) : '';

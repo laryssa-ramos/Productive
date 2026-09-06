@@ -6,15 +6,17 @@
   <a routerLink="/tarefas" class="btn btn-primary">Nova tarefa</a>
 </header>
 
-@if (store.summary().total === 0) {
+@if (store.summary().total === 0 && store.activeGoals().length === 0) {
   <section class="card onboarding">
     <h2>Comece por aqui</h2>
     <p>
-      Nenhuma tarefa ainda. Crie as suas categorias do jeito que faz sentido pra você e depois
-      registre as tarefas — o painel se monta sozinho a partir daí.
+      Nada registrado ainda. Crie as suas categorias do jeito que faz sentido pra você, depois
+      registre tarefas e metas diárias — o painel se monta sozinho a partir daí.
     </p>
     <div class="onboarding-actions">
       <a routerLink="/tarefas" class="btn btn-primary">Criar primeira tarefa</a>
+      <a routerLink="/metas" class="btn">Criar uma meta diária</a>
+      <a routerLink="/sorteio" class="btn">Despejar pendências</a>
       <a routerLink="/categorias" class="btn">Ajustar categorias</a>
     </div>
   </section>
@@ -47,6 +49,115 @@
       </div>
     </article>
   </section>
+
+  <p class="band-label">Hoje</p>
+
+  <section class="row row-action">
+    <article class="card focus-card">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Foco agora</h2>
+          <p class="card-sub">o que está mais perto de precisar de você</p>
+        </div>
+        <a routerLink="/tarefas" class="card-sub link">ver todas</a>
+      </div>
+
+      <ul class="focus-list">
+        @for (task of focus(); track task.id) {
+          <li class="focus-item">
+            <button
+              type="button"
+              class="check"
+              (click)="store.toggleDone(task.id)"
+              [attr.aria-label]="'Concluir ' + task.title"
+            ></button>
+            <span class="focus-body">
+              <span class="focus-title">{{ task.title }}</span>
+              <span class="focus-meta">
+                <span class="dot" [style.background]="colorOf(task)"></span>
+                {{ categoryName(task) }} · {{ priorityLabels[task.priority] }}
+                @if (task.status === 'doing') {
+                  · em andamento
+                }
+              </span>
+            </span>
+            @if (task.dueDate) {
+              <span class="due" [class.is-late]="isOverdue(task)">{{ dueLabel(task) }}</span>
+            }
+          </li>
+        } @empty {
+          <li><p class="empty">Nenhuma tarefa em aberto. Aproveita.</p></li>
+        }
+      </ul>
+    </article>
+
+    <div class="side-stack">
+      @if (store.drawnToday(); as drawn) {
+        <article class="card turn">
+          <p class="turn-label">Sua vez agora</p>
+          <p class="turn-text">{{ drawn.text }}</p>
+          <div class="turn-actions">
+            <button type="button" class="btn btn-sm btn-primary" (click)="store.completePending(drawn.id); store.ensureDraw()">
+              Feito
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm"
+              (click)="store.spin()"
+              [disabled]="store.eligibleToday().length < 2"
+            >
+              Agora não
+            </button>
+            <a routerLink="/sorteio" class="btn btn-sm btn-ghost">Ver fila</a>
+          </div>
+        </article>
+      }
+
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <h2 class="card-title">Metas de hoje</h2>
+            <p class="card-sub">
+              @if (store.goalSummary().scheduled > 0) {
+                {{ store.goalSummary().done }} de {{ store.goalSummary().scheduled }} cumpridas
+              } @else {
+                nenhuma meta para hoje
+              }
+            </p>
+          </div>
+          <a routerLink="/metas" class="card-sub link">marcar</a>
+        </div>
+
+        <div class="card-body">
+          @if (store.goalSummary().scheduled > 0) {
+            <div class="kpi-track" role="img"
+              [attr.aria-label]="store.goalSummary().percent + '% das metas de hoje cumpridas'">
+              <div class="kpi-fill" [style.width.%]="store.goalSummary().percent"></div>
+            </div>
+          }
+
+          <ul class="goal-mini">
+            @for (goal of goalsToday(); track goal.id) {
+              <li [class.is-done]="goal.done">
+                <span class="mark" [class.is-checked]="goal.done" [style.--mark]="goal.color"></span>
+                <span class="mini-name">{{ goal.name }}</span>
+                @if (goal.label) {
+                  <span class="mini-value">{{ goal.label }}</span>
+                }
+                @if (goal.streak > 0) {
+                  <span class="mini-streak">{{ goal.streak }}d</span>
+                }
+              </li>
+            } @empty {
+              <li><p class="empty">Sem metas programadas para hoje.</p></li>
+            }
+          </ul>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <p class="band-label">Como você está indo</p>
 
   <section class="row row-wide">
     <article class="card chart-card">
@@ -87,96 +198,66 @@
       </div>
     </article>
 
-    <article class="card">
-      <div class="card-head">
-        <h2 class="card-title">Onde estão suas tarefas</h2>
-      </div>
-      <div class="card-body">
-        <div class="stack" role="img" aria-label="Distribuição das tarefas por situação">
-          @for (segment of statusSegments(); track segment.status) {
-            @if (segment.percent > 0) {
-              <span
-                class="stack-part"
-                [style.background]="segment.color"
-                [style.width.%]="segment.percent"
-                [attr.title]="segment.label + ': ' + segment.count"
-              ></span>
+    <div class="side-stack">
+      <article class="card">
+        <div class="card-head">
+          <h2 class="card-title">Onde estão suas tarefas</h2>
+        </div>
+        <div class="card-body">
+          <div class="stack" role="img" aria-label="Distribuição das tarefas por situação">
+            @for (segment of statusSegments(); track segment.status) {
+              @if (segment.percent > 0) {
+                <span
+                  class="stack-part"
+                  [style.background]="segment.color"
+                  [style.width.%]="segment.percent"
+                  [attr.title]="segment.label + ': ' + segment.count"
+                ></span>
+              }
             }
-          }
+          </div>
+
+          <ul class="status-list">
+            @for (segment of statusSegments(); track segment.status) {
+              <li>
+                <span class="dot" [style.background]="segment.color"></span>
+                <span class="status-name">{{ segment.label }}</span>
+                <span class="status-count">{{ segment.count }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <h2 class="card-title">Progresso por categoria</h2>
+          <a routerLink="/categorias" class="card-sub link">gerenciar</a>
         </div>
 
-        <ul class="status-list">
-          @for (segment of statusSegments(); track segment.status) {
-            <li>
-              <span class="dot" [style.background]="segment.color"></span>
-              <span class="status-name">{{ segment.label }}</span>
-              <span class="status-count">{{ segment.count }}</span>
-            </li>
+        <div class="card-body">
+          @for (row of store.categoryStats(); track row.name) {
+            <div class="cat-row">
+              <div class="cat-head">
+                <span class="dot" [style.background]="row.color"></span>
+                <span class="cat-name">{{ row.name }}</span>
+                @if (row.overdue > 0) {
+                  <span class="cat-late">{{ row.overdue }} atrasada{{ row.overdue > 1 ? 's' : '' }}</span>
+                }
+                <span class="cat-value">{{ row.done }}/{{ row.total }}</span>
+              </div>
+              <div
+                class="cat-track"
+                [attr.title]="row.name + ': ' + row.done + ' de ' + row.total + ' concluídas (' + row.percent + '%)'"
+              >
+                <div class="cat-fill" [style.width.%]="row.percent" [style.background]="row.color"></div>
+              </div>
+            </div>
+          } @empty {
+            <p class="empty">Nenhuma categoria com tarefas ainda.</p>
           }
-        </ul>
-      </div>
-    </article>
-  </section>
-
-  <section class="row">
-    <article class="card">
-      <div class="card-head">
-        <h2 class="card-title">Progresso por categoria</h2>
-        <a routerLink="/categorias" class="card-sub link">gerenciar</a>
-      </div>
-
-      <div class="card-body">
-        @for (row of store.categoryStats(); track row.name) {
-          <div class="cat-row">
-            <div class="cat-head">
-              <span class="dot" [style.background]="row.color"></span>
-              <span class="cat-name">{{ row.name }}</span>
-              @if (row.overdue > 0) {
-                <span class="cat-late">{{ row.overdue }} atrasada{{ row.overdue > 1 ? 's' : '' }}</span>
-              }
-              <span class="cat-value">{{ row.done }}/{{ row.total }}</span>
-            </div>
-            <div
-              class="cat-track"
-              [attr.title]="row.name + ': ' + row.done + ' de ' + row.total + ' concluídas (' + row.percent + '%)'"
-            >
-              <div class="cat-fill" [style.width.%]="row.percent" [style.background]="row.color"></div>
-            </div>
-          </div>
-        } @empty {
-          <p class="empty">Nenhuma categoria com tarefas ainda.</p>
-        }
-      </div>
-    </article>
-
-    <article class="card">
-      <div class="card-head">
-        <h2 class="card-title">Foco agora</h2>
-        <a routerLink="/tarefas" class="card-sub link">ver todas</a>
-      </div>
-
-      <ul class="focus-list">
-        @for (task of focus(); track task.id) {
-          <li class="focus-item">
-            <button
-              type="button"
-              class="check"
-              (click)="store.toggleDone(task.id)"
-              [attr.aria-label]="'Concluir ' + task.title"
-            ></button>
-            <span class="focus-body">
-              <span class="focus-title">{{ task.title }}</span>
-              <span class="focus-meta">
-                <span class="dot" [style.background]="colorOf(task)"></span>
-                {{ categoryName(task) }} · {{ priorityLabels[task.priority] }}
-              </span>
-            </span>
-            <span class="due" [class.is-late]="isOverdue(task)">{{ dueLabel(task) }}</span>
-          </li>
-        } @empty {
-          <li><p class="empty">Nada com prazo nos próximos dias. Respira.</p></li>
-        }
-      </ul>
-    </article>
+        </div>
+      </article>
+    </div>
   </section>
 }

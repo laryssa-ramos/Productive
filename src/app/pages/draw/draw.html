@@ -1,0 +1,153 @@
+<header class="page-head">
+  <div>
+    <h1>Sorteio</h1>
+    <p class="page-sub">
+      Joga tudo aqui sem pensar. O app escolhe uma por você.
+    </p>
+  </div>
+</header>
+
+<form class="card capture" (submit)="submitCapture($event)">
+  <input
+    class="input"
+    placeholder="O que está pendente? Escreva e dê Enter."
+    aria-label="Nova pendência"
+    autocomplete="off"
+    [value]="capture()"
+    (input)="onCapture($event)"
+  />
+  <button type="submit" class="btn btn-primary" [disabled]="capture().trim().length === 0">
+    Adicionar
+  </button>
+</form>
+
+<section class="card turn" [class.is-spinning]="spinning()">
+  @if (store.drawnToday(); as item) {
+    <p class="turn-label">Sua vez agora</p>
+    <p class="turn-text">{{ item.text }}</p>
+
+    <div class="turn-actions">
+      <button type="button" class="btn btn-primary" (click)="complete(item)">Feito</button>
+      <button
+        type="button"
+        class="btn"
+        (click)="spin()"
+        [disabled]="store.eligibleToday().length < 2"
+      >
+        Agora não
+      </button>
+      <button type="button" class="btn btn-ghost" (click)="promote(item)">
+        Virar tarefa
+      </button>
+    </div>
+
+    @if (store.eligibleToday().length < 2) {
+      <p class="turn-hint">É a única disponível hoje — as outras você já adiou.</p>
+    }
+  } @else if (store.openPending().length === 0) {
+    <p class="turn-label">Nada pendente</p>
+    <p class="turn-empty">
+      Assim que você jogar alguma coisa no campo acima, ela aparece aqui.
+    </p>
+  } @else {
+    <p class="turn-label">Por hoje, chega</p>
+    <p class="turn-empty">
+      Você adiou tudo que estava disponível. Amanhã elas voltam para a roda —
+      ou escolha uma na lista abaixo.
+    </p>
+  }
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <h2 class="card-title">Na fila</h2>
+    <span class="card-sub">
+      {{ store.pendingSummary().open }} pendente(s)
+      @if (store.pendingSummary().open !== store.pendingSummary().available) {
+        · {{ store.pendingSummary().available }} disponível(is) hoje
+      }
+    </span>
+  </div>
+
+  <ul class="list">
+    @for (item of store.openPending(); track item.id) {
+      <li class="item" [class.is-current]="store.drawnToday()?.id === item.id">
+        @if (editingId() === item.id) {
+          <input
+            class="input"
+            [value]="editText()"
+            (input)="onEditText($event)"
+            (keyup.enter)="saveEdit()"
+            (blur)="saveEdit()"
+            aria-label="Editar pendência"
+          />
+        } @else {
+          <button
+            type="button"
+            class="check"
+            (click)="complete(item)"
+            [attr.aria-label]="'Concluir ' + item.text"
+          ></button>
+          <span class="item-text" (dblclick)="startEdit(item)">{{ item.text }}</span>
+          @if (store.drawnToday()?.id === item.id) {
+            <span class="badge current">é a da vez</span>
+          }
+          <span class="item-actions">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(item)">
+              Editar
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="promote(item)">
+              Virar tarefa
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" (click)="remove(item)">
+              Excluir
+            </button>
+          </span>
+        }
+      </li>
+    } @empty {
+      <li>
+        <p class="empty">
+          Nada na fila. Isso também é um resultado — ou você já fez tudo, ou ainda
+          não tirou da cabeça.
+        </p>
+      </li>
+    }
+  </ul>
+</section>
+
+@if (store.donePending().length > 0) {
+  <section class="card">
+    <div class="card-head">
+      <h2 class="card-title">Resolvidas</h2>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="showDone.set(!showDone())">
+        {{ showDone() ? 'Esconder' : 'Mostrar' }} ({{ store.donePending().length }})
+      </button>
+    </div>
+
+    @if (showDone()) {
+      <ul class="list">
+        @for (item of store.donePending(); track item.id) {
+          <li class="item is-done">
+            <span class="check is-checked" aria-hidden="true">✓</span>
+            <span class="item-text">{{ item.text }}</span>
+            <span class="item-actions">
+              <button type="button" class="btn btn-ghost btn-sm" (click)="store.reopenPending(item.id)">
+                Reabrir
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" (click)="remove(item)">
+                Excluir
+              </button>
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}
+
+@if (notice(); as message) {
+  <p class="toast" role="status">
+    {{ message }} <a routerLink="/tarefas">Ver tarefas</a>
+  </p>
+}
