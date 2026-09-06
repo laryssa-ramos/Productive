@@ -33,11 +33,18 @@ em vez de dar 404.
   sem categoria, prazo ou prioridade. O app escolhe uma por dia e mostra no painel,
   para você fazer em vez de decidir. "Agora não" tira aquela da roda só de hoje;
   "Virar tarefa" promove a pendência à lista de tarefas quando ela cresce.
-- **Escrita** (`/escrita`): um canto para ideias de pauta, rascunhos de post e
-  trechos soltos. Editor Markdown com barra de formatação e prévia, busca, situação
-  (ideia → rascunho → pronto → publicado), contagem de palavras, tempo de leitura,
-  modo foco (esconde toda a casca do app), download em `.md` e um botão para a
-  ideia virar tarefa. Excluir manda para a lixeira, de onde dá para restaurar.
+- **Escrita** (`/escrita`): dividida em duas telas.
+  - **Repertório**: temas soltos — pauta de artigo, ideia de vídeo, o que vier. Um
+    campo, Enter, pronto. São notas com situação "ideia", mostradas como cartões.
+  - **Rascunhos**: o editor de verdade. Markdown com barra de formatação e prévia,
+    busca, situação (rascunho → pronto → publicado), contagem de palavras, tempo de
+    leitura, modo foco (esconde toda a casca do app), download em `.md` e um botão
+    para virar tarefa. Excluir manda para a lixeira, de onde dá para restaurar.
+
+  O botão **Escrever** de um cartão do repertório muda a situação para "rascunho" e
+  abre o editor com o tema já no título — não existe conversão nem cópia, é a mesma
+  nota mudando de fase. Por isso o repertório não é uma entidade separada: seria
+  criar um lugar a mais para procurar e um passo a mais para atravessar.
 - **Categorias** (`/categorias`): criar as suas próprias categorias com nome e cor.
   Excluir uma categoria não apaga as tarefas — elas ficam como "Sem categoria".
 

@@ -23,6 +23,8 @@ import {
 
 type Format = 'bold' | 'italic' | 'heading' | 'list' | 'quote' | 'code' | 'link';
 type StatusFilter = 'all' | NoteStatus;
+/** Duas telas: escrever de verdade, ou só despejar temas. */
+type Mode = 'drafts' | 'ideas';
 
 @Component({
   selector: 'app-writing',
@@ -36,6 +38,8 @@ export class WritingPage implements OnDestroy {
   protected readonly ui = inject(UiService);
 
   protected readonly statusOrder = NOTE_STATUS_ORDER;
+  /** Os filtros da lista de escrita: "ideia" tem tela própria. */
+  protected readonly draftStatuses = NOTE_STATUS_ORDER.filter((status) => status !== 'idea');
   protected readonly statusLabels = NOTE_STATUS_LABELS;
 
   protected readonly selectedId = signal<string | null>(null);
@@ -43,13 +47,26 @@ export class WritingPage implements OnDestroy {
   protected readonly statusFilter = signal<StatusFilter>('all');
   protected readonly preview = signal(false);
   protected readonly showTrash = signal(false);
+  protected readonly mode = signal<Mode>('drafts');
+  protected readonly capture = signal('');
 
   private readonly editor = viewChild<ElementRef<HTMLTextAreaElement>>('editor');
 
+  /** O repertório: temas ainda não escritos. */
+  protected readonly ideas = computed(() => {
+    const query = this.query().trim().toLowerCase();
+    return this.notes
+      .notes()
+      .filter((note) => note.status === 'idea')
+      .filter((note) => !query || note.title.toLowerCase().includes(query));
+  });
+
+  /** A lista de escrita não mistura temas soltos com textos em andamento. */
   protected readonly visible = computed(() => {
     const query = this.query().trim().toLowerCase();
     const status = this.statusFilter();
     return this.notes.notes().filter((note) => {
+      if (note.status === 'idea') return false;
       if (status !== 'all' && note.status !== status) return false;
       if (!query) return true;
       return `${note.title} ${note.body}`.toLowerCase().includes(query);
@@ -88,9 +105,32 @@ export class WritingPage implements OnDestroy {
   }
 
   protected create(): void {
-    const note = this.notes.create();
+    const note = this.notes.create('draft');
     this.selectedId.set(note.id);
     this.preview.set(false);
+  }
+
+  // --------------------------------------------------------------- repertório
+
+  protected onCapture(event: Event): void {
+    this.capture.set((event.target as HTMLInputElement).value);
+  }
+
+  /** Enter cria o tema e limpa o campo, para você despejar vários seguidos. */
+  protected submitCapture(event: Event): void {
+    event.preventDefault();
+    const text = this.capture().trim();
+    if (!text) return;
+    this.notes.create('idea', text);
+    this.capture.set('');
+  }
+
+  /** A ideia vira o rascunho: o tema já entra como título, sem conversão. */
+  protected startWriting(note: Note): void {
+    this.notes.update(note.id, { status: 'draft' });
+    this.selectedId.set(note.id);
+    this.preview.set(false);
+    this.mode.set('drafts');
   }
 
   protected onQuery(event: Event): void {

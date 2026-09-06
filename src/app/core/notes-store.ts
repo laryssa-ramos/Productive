@@ -47,14 +47,14 @@ export class NotesStore {
     return this._notes().find((note) => note.id === id);
   }
 
-  create(): Note {
+  create(status: NoteStatus = 'idea', title = ''): Note {
     const now = new Date().toISOString();
     const note: Note = {
       id: crypto.randomUUID(),
-      title: '',
+      title,
       body: '',
       categoryId: null,
-      status: 'idea',
+      status,
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
