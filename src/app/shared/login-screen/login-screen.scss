@@ -1,0 +1,84 @@
+.gate {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.panel {
+  width: 100%;
+  max-width: 380px;
+  padding: 28px 26px 22px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+
+  strong {
+    display: block;
+    font-size: 15px;
+  }
+
+  small {
+    display: block;
+    color: var(--text-3);
+    font-size: 11px;
+  }
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+.lead {
+  margin: 0 0 18px;
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.full {
+  width: 100%;
+}
+
+.problem {
+  margin: 10px 0 0;
+  color: var(--critical);
+  font-size: 12px;
+}
+
+.note {
+  margin: 16px 0 0;
+  color: var(--text-3);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.theme {
+  margin-top: 18px;
+  padding: 0;
+  min-height: 0;
+  color: var(--text-3);
+  font-size: 11px;
+}

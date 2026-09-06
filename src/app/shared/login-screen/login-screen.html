@@ -1,0 +1,58 @@
+<main class="gate">
+  <section class="card panel">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">P</span>
+      <span>
+        <strong>Productive</strong>
+        <small>suas tarefas, do seu jeito</small>
+      </span>
+    </div>
+
+    @if (sync.status() === 'link-sent') {
+      <h1>Confira seu e-mail</h1>
+      <p class="lead">
+        Enviamos um link de acesso para <strong>{{ sync.email() }}</strong>.
+        Abra o link <em>neste mesmo aparelho</em> — ele vale por uma hora.
+      </p>
+      <button type="button" class="btn btn-ghost full" (click)="useAnotherEmail()">
+        Usar outro e-mail
+      </button>
+    } @else {
+      <h1>Entrar</h1>
+      <p class="lead">
+        Este app é só seu. Entre com o seu e-mail para acessar.
+      </p>
+
+      <form (submit)="submit($event)">
+        <input
+          class="input"
+          type="email"
+          name="email"
+          placeholder="seu@email.com"
+          autocomplete="email"
+          required
+          autofocus
+          aria-label="Seu e-mail"
+          [value]="email()"
+          (input)="onEmail($event)"
+        />
+        <button type="submit" class="btn btn-primary full" [disabled]="sending()">
+          {{ sending() ? 'Enviando…' : 'Receber link de acesso' }}
+        </button>
+      </form>
+
+      @if (sync.message(); as problem) {
+        <p class="problem">{{ problem }}</p>
+      }
+
+      <p class="note">
+        Sem senha para decorar: chega um link no e-mail e pronto. O acesso fica
+        salvo neste aparelho, então você não precisa repetir isso toda vez.
+      </p>
+    }
+
+    <button type="button" class="btn btn-ghost btn-sm theme" (click)="theme.toggle()">
+      Tema: {{ theme.mode() === 'system' ? 'automático' : theme.mode() === 'dark' ? 'escuro' : 'claro' }}
+    </button>
+  </section>
+</main>

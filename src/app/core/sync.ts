@@ -43,6 +43,11 @@ export class SyncService {
   readonly enabled = syncEnabled();
   /** Quem está logado — outras camadas de sincronização se penduram nisto. */
   readonly currentUserId = signal<string | null>(null);
+  /**
+   * Falso até sabermos se existe sessão. Sem isso a tela de login pisca antes de
+   * o app se dar conta de que você já está logada.
+   */
+  readonly ready = signal(false);
   readonly status = signal<SyncStatus>(this.enabled ? 'signed-out' : 'disabled');
   readonly email = signal<string | null>(null);
   readonly message = signal<string | null>(null);
@@ -57,19 +62,30 @@ export class SyncService {
   }
 
   async init(): Promise<void> {
-    if (!this.enabled) return;
+    if (!this.enabled) {
+      // Sem Supabase configurado não há porteiro: o app é local e abre direto.
+      this.ready.set(true);
+      return;
+    }
 
-    const { createClient } = await import('@supabase/supabase-js');
-    this.client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      this.client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    this.client.auth.onAuthStateChange((_event, session) => {
-      // O supabase-js segura um lock enquanto roda este callback; consultar o
-      // banco aqui dentro trava. Por isso o trabalho sai da pilha antes.
-      setTimeout(() => void this.onSession(session), 0);
-    });
+      this.client.auth.onAuthStateChange((_event, session) => {
+        // O supabase-js segura um lock enquanto roda este callback; consultar o
+        // banco aqui dentro trava. Por isso o trabalho sai da pilha antes.
+        setTimeout(() => void this.onSession(session), 0);
+      });
 
-    const { data } = await this.client.auth.getSession();
-    await this.onSession(data.session);
+      const { data } = await this.client.auth.getSession();
+      await this.onSession(data.session);
+    } catch {
+      this.fail('Não foi possível iniciar a sessão. Tente recarregar a página.');
+    } finally {
+      // Aconteça o que acontecer, o app precisa sair da tela de carregamento.
+      this.ready.set(true);
+    }
 
     window.addEventListener('online', () => void this.refresh());
     window.addEventListener('offline', () => this.status.set('offline'));

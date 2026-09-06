@@ -8,6 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { marked } from 'marked';
+import { DictationService } from '../../core/dictation';
 import { NotesStore } from '../../core/notes-store';
 import { NotesSync } from '../../core/notes-sync';
 import { ProductivityStore } from '../../core/productivity-store';
@@ -36,6 +37,7 @@ export class WritingPage implements OnDestroy {
   protected readonly notesSync = inject(NotesSync);
   protected readonly store = inject(ProductivityStore);
   protected readonly ui = inject(UiService);
+  protected readonly dictation = inject(DictationService);
 
   protected readonly statusOrder = NOTE_STATUS_ORDER;
   /** Os filtros da lista de escrita: "ideia" tem tela própria. */
@@ -95,6 +97,7 @@ export class WritingPage implements OnDestroy {
   /** Sair da escrita sempre devolve o menu — senão o app ficaria sem navegação. */
   ngOnDestroy(): void {
     this.ui.focusMode.set(false);
+    this.dictation.stop();
   }
 
   // ------------------------------------------------------------------- edição
@@ -197,6 +200,33 @@ export class WritingPage implements OnDestroy {
       dueDate: null,
     });
     this.notes.update(note.id, { status: 'draft' });
+  }
+
+  // ---------------------------------------------------------------- ditado
+
+  protected toggleDictation(): void {
+    if (this.dictation.listening()) {
+      this.dictation.stop();
+      return;
+    }
+
+    const note = this.selected();
+    if (!note) return;
+
+    // O texto falado entra onde o cursor estava, e vai empurrando dali para frente.
+    const area = this.editor()?.nativeElement;
+    let at = area ? area.selectionStart : note.body.length;
+
+    this.dictation.start((spoken) => {
+      const current = this.notes.byId(note.id)?.body ?? '';
+      const needsSpace = at > 0 && !/\s$/.test(current.slice(0, at));
+      const chunk = (needsSpace ? ' ' : '') + spoken;
+
+      this.notes.update(note.id, {
+        body: current.slice(0, at) + chunk + current.slice(at),
+      });
+      at += chunk.length;
+    });
   }
 
   // -------------------------------------------------------------- formatação

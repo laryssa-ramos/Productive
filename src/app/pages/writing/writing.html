@@ -215,8 +215,33 @@
             <button type="button" (click)="format('quote')" title="Citação">”</button>
             <button type="button" (click)="format('code')" title="Código">&lt;/&gt;</button>
             <button type="button" (click)="format('link')" title="Link">↗</button>
+
+            @if (dictation.supported) {
+              <button
+                type="button"
+                class="dictate"
+                [class.is-on]="dictation.listening()"
+                (click)="toggleDictation()"
+                [attr.aria-pressed]="dictation.listening()"
+                [title]="dictation.listening() ? 'Parar de ditar' : 'Ditar'"
+              >
+                <span class="mic" aria-hidden="true"></span>
+                {{ dictation.listening() ? 'Ouvindo' : 'Ditar' }}
+              </button>
+            }
+
             <span class="toolbar-hint">Markdown — o texto sai limpo para qualquer blog.</span>
           </div>
+
+          @if (dictation.listening() || dictation.error()) {
+            <p class="dictation-bar" role="status">
+              @if (dictation.error(); as problem) {
+                <span class="dictation-error">{{ problem }}</span>
+              } @else {
+                <span class="dictation-live">{{ dictation.interim() || 'Pode falar…' }}</span>
+              }
+            </p>
+          }
 
           <textarea
             #editor

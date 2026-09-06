@@ -1,4 +1,4 @@
-import { Component, inject, signal, viewChild, ElementRef } from '@angular/core';
+import { Component, computed, inject, signal, viewChild, ElementRef } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ProductivityStore } from './core/productivity-store';
 import { NotesStore } from './core/notes-store';
@@ -7,13 +7,14 @@ import { NotificationService } from './core/notifications';
 import { SyncService } from './core/sync';
 import { ThemeService } from './core/theme';
 import { UiService } from './core/ui';
+import { LoginScreen } from './shared/login-screen/login-screen';
 import { ReminderPanel } from './shared/reminder-panel/reminder-panel';
 import { SyncPanel } from './shared/sync-panel/sync-panel';
 import { toIsoDate } from './core/date-utils';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, SyncPanel, ReminderPanel],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, SyncPanel, ReminderPanel, LoginScreen],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -30,6 +31,14 @@ export class App {
 
   protected readonly menuOpen = signal(false);
   protected readonly notice = signal<string | null>(null);
+
+  /**
+   * Com Supabase configurado, o app só aparece depois do login. Sem configuração
+   * não há porteiro — o app é local e abre direto, como sempre foi.
+   */
+  protected readonly locked = computed(
+    () => this.sync.enabled && this.sync.currentUserId() === null,
+  );
 
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
 

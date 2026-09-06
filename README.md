@@ -40,6 +40,8 @@ em vez de dar 404.
     busca, situação (rascunho → pronto → publicado), contagem de palavras, tempo de
     leitura, modo foco (esconde toda a casca do app), download em `.md` e um botão
     para virar tarefa. Excluir manda para a lixeira, de onde dá para restaurar.
+    Tem também **ditado**: o botão "Ditar" transcreve sua fala direto no texto, a
+    partir de onde o cursor estiver.
 
   O botão **Escrever** de um cartão do repertório muda a situação para "rascunho" e
   abre o editor com o tema já no título — não existe conversão nem cópia, é a mesma
@@ -61,6 +63,30 @@ login e sem nuvem.
 Em qualquer um dos casos, os botões **Exportar** e **Importar** no rodapé do menu
 baixam e restauram um `.json` com tudo — é o backup manual, útil antes de limpar
 os dados do navegador.
+
+## Acesso
+
+Com o Supabase configurado, o app **exige login antes de mostrar qualquer coisa**.
+Quem abrir o endereço sem sessão vê só a tela de entrada.
+
+Isso não é uma senha no código — não adiantaria, já que qualquer pessoa pode abrir
+o bundle e ler. Quem valida é o Supabase, o mesmo login por e-mail que sincroniza
+os aparelhos. Sem configuração do Supabase, não há porteiro: o app roda local e
+abre direto, como antes.
+
+Vale ter claro o que essa tela protege e o que já estava protegido:
+
+- **Seus dados nunca estiveram expostos.** Um estranho que abrisse o endereço via
+  um app vazio — o localStorage é dele, e o RLS impede a conta dele de ler a sua.
+  A tela de entrada impede que ele *use* o app, não que ele leia seus dados.
+- **Ela não protege o aparelho.** Quem tiver acesso ao seu navegador logado entra
+  junto, e os dados locais continuam legíveis no armazenamento do navegador.
+
+**O risco a conhecer:** o e-mail do plano gratuito do Supabase manda 2 mensagens
+por hora. Se você limpar os dados do site ou entrar num aparelho novo e gastar os
+dois pedidos, fica até uma hora sem conseguir entrar — e agora "sem entrar"
+significa sem acessar o app. A sessão fica salva e se renova sozinha, então isso
+só aparece em aparelho novo ou depois de limpar o navegador.
 
 ## Sincronizar celular e computador (opcional)
 
@@ -100,6 +126,26 @@ Isso significa que editar **a mesma tarefa nos dois aparelhos ao mesmo tempo**, 
 deles offline, faz o último a sincronizar sobrescrever o outro. Para uso pessoal é
 um trade-off consciente: mesclar campo a campo exigiria bem mais máquina do que o
 problema pede.
+
+## Ditado (falar em vez de digitar)
+
+O botão **Ditar** no editor usa a Web Speech API — o mesmo reconhecimento de fala
+que o teclado do celular usa. Não passa por servidor nosso, não custa nada e não
+precisa de chave: o navegador faz o trabalho.
+
+O texto reconhecido entra a partir de onde o cursor estava e vai empurrando dali
+para frente, então dá para ditar no meio de um parágrafo já escrito. Enquanto
+você fala, o que ainda não foi confirmado aparece numa faixa acima do texto.
+
+Duas coisas a saber:
+
+- **O botão só aparece onde a API existe** (`SpeechRecognition` /
+  `webkitSpeechRecognition`). Chrome e Edge têm; Firefox não; no Safari é
+  irregular. Em vez de mostrar um botão quebrado, ele some.
+- **O navegador encerra a escuta sozinho** em pausas longas. O serviço religa
+  automaticamente enquanto o modo de ditado estiver ligado, então a pausa não
+  interrompe você — mas isso significa que o microfone continua ativo até você
+  clicar em "Ouvindo" para parar.
 
 ## Lembretes e notificações
 

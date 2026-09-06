@@ -1,109 +1,117 @@
-<div class="shell" [class.is-focus]="ui.focusMode()">
-  <button
-    type="button"
-    class="menu-toggle"
-    (click)="menuOpen.set(!menuOpen())"
-    [attr.aria-expanded]="menuOpen()"
-    aria-label="Abrir menu"
-  >
-    <span class="bars" aria-hidden="true"></span>
-  </button>
+@if (!sync.ready()) {
+  <div class="boot" role="status" aria-label="Carregando">
+    <span class="boot-mark" aria-hidden="true">P</span>
+  </div>
+} @else if (locked()) {
+  <app-login-screen />
+} @else {
+  <div class="shell" [class.is-focus]="ui.focusMode()">
+    <button
+      type="button"
+      class="menu-toggle"
+      (click)="menuOpen.set(!menuOpen())"
+      [attr.aria-expanded]="menuOpen()"
+      aria-label="Abrir menu"
+    >
+      <span class="bars" aria-hidden="true"></span>
+    </button>
 
-  @if (menuOpen()) {
-    <button type="button" class="scrim" (click)="menuOpen.set(false)" aria-label="Fechar menu"></button>
-  }
+    @if (menuOpen()) {
+      <button type="button" class="scrim" (click)="menuOpen.set(false)" aria-label="Fechar menu"></button>
+    }
 
-  <aside class="sidebar" [class.is-open]="menuOpen()">
-    <div class="brand">
-      <span class="brand-mark" aria-hidden="true">P</span>
-      <span>
-        <strong>Productive</strong>
-        <small>suas tarefas, do seu jeito</small>
-      </span>
-    </div>
-
-    <nav class="nav" (click)="menuOpen.set(false)">
-      <a routerLink="/painel" routerLinkActive="is-active" class="nav-link">
-        <span class="nav-icon" aria-hidden="true">◧</span>
-        Painel
-      </a>
-      <a routerLink="/tarefas" routerLinkActive="is-active" class="nav-link">
-        <span class="nav-icon" aria-hidden="true">☰</span>
-        Tarefas
-        @if (store.summary().open > 0) {
-          <span class="nav-count">{{ store.summary().open }}</span>
-        }
-      </a>
-      <a routerLink="/escrita" routerLinkActive="is-active" class="nav-link">
-        <span class="nav-icon" aria-hidden="true">✎</span>
-        Escrita
-        @if (notes.notes().length > 0) {
-          <span class="nav-count">{{ notes.notes().length }}</span>
-        }
-      </a>
-      <a routerLink="/sorteio" routerLinkActive="is-active" class="nav-link">
-        <span class="nav-icon" aria-hidden="true">✦</span>
-        Sorteio
-        @if (store.pendingSummary().open > 0) {
-          <span class="nav-count">{{ store.pendingSummary().open }}</span>
-        }
-      </a>
-      <a routerLink="/metas" routerLinkActive="is-active" class="nav-link">
-        <span class="nav-icon" aria-hidden="true">◎</span>
-        Metas
-        @if (store.goalSummary().scheduled > 0) {
-          <span class="nav-count">
-            {{ store.goalSummary().done }}/{{ store.goalSummary().scheduled }}
-          </span>
-        }
-      </a>
-      <a routerLink="/categorias" routerLinkActive="is-active" class="nav-link">
-        <span class="nav-icon" aria-hidden="true">◆</span>
-        Categorias
-        <span class="nav-count">{{ store.categories().length }}</span>
-      </a>
-    </nav>
-
-    <div class="sidebar-foot">
-      <button type="button" class="btn btn-ghost btn-sm full" (click)="theme.toggle()">
-        Tema: {{ theme.mode() === 'system' ? 'automático' : theme.mode() === 'dark' ? 'escuro' : 'claro' }}
-      </button>
-
-      <app-reminder-panel />
-
-      <app-sync-panel />
-
-      <p class="foot-title">Seus dados</p>
-      <p class="foot-hint">
-        @if (sync.status() === 'synced' || sync.status() === 'syncing') {
-          Uma cópia fica neste navegador e outra na sua conta. O backup em arquivo é o
-          seu plano B.
-        } @else {
-          Tudo fica salvo neste navegador. Exporte um backup antes de limpar o histórico.
-        }
-      </p>
-      <div class="foot-actions">
-        <button type="button" class="btn btn-sm" (click)="exportData()">Exportar</button>
-        <button type="button" class="btn btn-sm" (click)="pickFile()">Importar</button>
+    <aside class="sidebar" [class.is-open]="menuOpen()">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">P</span>
+        <span>
+          <strong>Productive</strong>
+          <small>suas tarefas, do seu jeito</small>
+        </span>
       </div>
-      <button type="button" class="btn btn-danger btn-sm full" (click)="resetAll()">
-        Apagar tudo
-      </button>
-      <input
-        #fileInput
-        type="file"
-        accept="application/json"
-        hidden
-        (change)="importData($event)"
-      />
-    </div>
-  </aside>
 
-  <main class="content">
-    <router-outlet />
-  </main>
+      <nav class="nav" (click)="menuOpen.set(false)">
+        <a routerLink="/painel" routerLinkActive="is-active" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">◧</span>
+          Painel
+        </a>
+        <a routerLink="/tarefas" routerLinkActive="is-active" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">☰</span>
+          Tarefas
+          @if (store.summary().open > 0) {
+            <span class="nav-count">{{ store.summary().open }}</span>
+          }
+        </a>
+        <a routerLink="/escrita" routerLinkActive="is-active" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">✎</span>
+          Escrita
+          @if (notes.notes().length > 0) {
+            <span class="nav-count">{{ notes.notes().length }}</span>
+          }
+        </a>
+        <a routerLink="/sorteio" routerLinkActive="is-active" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">✦</span>
+          Sorteio
+          @if (store.pendingSummary().open > 0) {
+            <span class="nav-count">{{ store.pendingSummary().open }}</span>
+          }
+        </a>
+        <a routerLink="/metas" routerLinkActive="is-active" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">◎</span>
+          Metas
+          @if (store.goalSummary().scheduled > 0) {
+            <span class="nav-count">
+              {{ store.goalSummary().done }}/{{ store.goalSummary().scheduled }}
+            </span>
+          }
+        </a>
+        <a routerLink="/categorias" routerLinkActive="is-active" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">◆</span>
+          Categorias
+          <span class="nav-count">{{ store.categories().length }}</span>
+        </a>
+      </nav>
 
-  @if (notice(); as message) {
-    <p class="toast" role="status">{{ message }}</p>
-  }
-</div>
+      <div class="sidebar-foot">
+        <button type="button" class="btn btn-ghost btn-sm full" (click)="theme.toggle()">
+          Tema: {{ theme.mode() === 'system' ? 'automático' : theme.mode() === 'dark' ? 'escuro' : 'claro' }}
+        </button>
+
+        <app-reminder-panel />
+
+        <app-sync-panel />
+
+        <p class="foot-title">Seus dados</p>
+        <p class="foot-hint">
+          @if (sync.status() === 'synced' || sync.status() === 'syncing') {
+            Uma cópia fica neste navegador e outra na sua conta. O backup em arquivo é o
+            seu plano B.
+          } @else {
+            Tudo fica salvo neste navegador. Exporte um backup antes de limpar o histórico.
+          }
+        </p>
+        <div class="foot-actions">
+          <button type="button" class="btn btn-sm" (click)="exportData()">Exportar</button>
+          <button type="button" class="btn btn-sm" (click)="pickFile()">Importar</button>
+        </div>
+        <button type="button" class="btn btn-danger btn-sm full" (click)="resetAll()">
+          Apagar tudo
+        </button>
+        <input
+          #fileInput
+          type="file"
+          accept="application/json"
+          hidden
+          (change)="importData($event)"
+        />
+      </div>
+    </aside>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+
+    @if (notice(); as message) {
+      <p class="toast" role="status">{{ message }}</p>
+    }
+  </div>
+}
