@@ -1,4 +1,4 @@
-<div class="shell">
+<div class="shell" [class.is-focus]="ui.focusMode()">
   <button
     type="button"
     class="menu-toggle"
@@ -32,6 +32,13 @@
         Tarefas
         @if (store.summary().open > 0) {
           <span class="nav-count">{{ store.summary().open }}</span>
+        }
+      </a>
+      <a routerLink="/escrita" routerLinkActive="is-active" class="nav-link">
+        <span class="nav-icon" aria-hidden="true">✎</span>
+        Escrita
+        @if (notes.notes().length > 0) {
+          <span class="nav-count">{{ notes.notes().length }}</span>
         }
       </a>
       <a routerLink="/sorteio" routerLinkActive="is-active" class="nav-link">

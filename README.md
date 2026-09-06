@@ -33,6 +33,11 @@ em vez de dar 404.
   sem categoria, prazo ou prioridade. O app escolhe uma por dia e mostra no painel,
   para você fazer em vez de decidir. "Agora não" tira aquela da roda só de hoje;
   "Virar tarefa" promove a pendência à lista de tarefas quando ela cresce.
+- **Escrita** (`/escrita`): um canto para ideias de pauta, rascunhos de post e
+  trechos soltos. Editor Markdown com barra de formatação e prévia, busca, situação
+  (ideia → rascunho → pronto → publicado), contagem de palavras, tempo de leitura,
+  modo foco (esconde toda a casca do app), download em `.md` e um botão para a
+  ideia virar tarefa. Excluir manda para a lixeira, de onde dá para restaurar.
 - **Categorias** (`/categorias`): criar as suas próprias categorias com nome e cor.
   Excluir uma categoria não apaga as tarefas — elas ficam como "Sem categoria".
 
@@ -56,8 +61,9 @@ A sincronização usa o Supabase direto do navegador — não há back-end para 
 São cinco passos, uma vez só:
 
 1. Crie um projeto em [supabase.com](https://supabase.com) (plano gratuito serve).
-2. No **SQL Editor**, cole e rode o conteúdo de [`docs/supabase.sql`](docs/supabase.sql).
-   Ele cria a tabela e as regras que impedem uma conta de ler os dados da outra.
+2. No **SQL Editor**, cole e rode o conteúdo de [`docs/supabase.sql`](docs/supabase.sql)
+   e depois o de [`docs/supabase-notas.sql`](docs/supabase-notas.sql). Eles criam as
+   tabelas e as regras que impedem uma conta de ler os dados da outra.
 3. Em **Authentication › URL Configuration**, ponha o endereço da Vercel em
    *Site URL* e adicione `http://localhost:4200/**` em *Redirect URLs* (para
    conseguir entrar também em desenvolvimento).
@@ -155,7 +161,11 @@ src/app/
     date-utils.ts           datas em yyyy-mm-dd, sempre no fuso local
     productivity-store.ts   estado da aplicação (signals) + persistência local
     notifications.ts        lembrete diário e badge no ícone
+    note-models.ts          tipos das notas de escrita
+    notes-store.ts          notas: estado e persistência local
+    notes-sync.ts           notas: sincronização linha a linha
     sync.ts                 espelhamento com o Supabase (opcional)
+    ui.ts                   estado de interface (modo foco)
     supabase-config.ts      credenciais do projeto Supabase
     theme.ts                tema claro/escuro/automático
   pages/
@@ -163,12 +173,14 @@ src/app/
     tasks/                  lista e formulário de tarefas
     goals/                  metas diárias, sequências e histórico
     draw/                   pendências soltas e o sorteio do dia
+    writing/                editor de notas em Markdown
     categories/             CRUD de categorias
   shared/
     reminder-panel/         lembrete diário no rodapé do menu
     sync-panel/             login por e-mail e estado da sincronização
   app.*                     casca: menu lateral, backup, rotas
-docs/supabase.sql           tabela e políticas de acesso do banco
+docs/supabase.sql           tabela e políticas do estado principal
+docs/supabase-notas.sql     tabela e políticas das notas
 ```
 
 O `ProductivityStore` é a fonte única de verdade: expõe signals para leitura,
@@ -180,6 +192,18 @@ dia tocado, e a ausência de linha significa zero. Sequência e recorde são
 calculados na hora a partir desse histórico, contando apenas os dias em que a
 meta vale — um domingo não quebra a sequência de uma meta de dias úteis, e o dia
 de hoje ainda em aberto também não.
+
+**As notas são a exceção do modelo acima.** Todo o resto do app vive num único
+JSON — uma chave no localStorage, uma linha no Supabase. Isso é ótimo para dados
+pequenos e péssimo para texto longo, por dois motivos: cada gravação empurraria o
+app inteiro para a nuvem a cada tecla, e um conflito custaria toda a escrita, não
+só a nota editada. Por isso as notas moram em `productive.notes.v1` no
+localStorage e na tabela `productive_notes`, com **uma linha por nota** e
+sincronização individual — o conflito, quando acontece, atinge uma nota só.
+
+Excluir uma nota não apaga a linha: grava `deletedAt`. Sem essa lápide, a exclusão
+feita no celular nunca chegaria ao computador — ele apenas reenviaria a nota de
+volta na sincronização seguinte. Esvaziar a lixeira é o que apaga de vez.
 
 O sorteio não é aleatório puro. Ele evita repetir uma pendência sorteada nos
 últimos 3 dias (desde que haja alternativa) e dá mais peso ao que está parado há

@@ -92,9 +92,10 @@
     </article>
 
     <div class="side-stack">
-      @if (store.drawnToday(); as drawn) {
-        <article class="card turn">
-          <p class="turn-label">Sua vez agora</p>
+      <article class="card turn">
+        <p class="turn-label">Sua vez agora</p>
+
+        @if (store.drawnToday(); as drawn) {
           <p class="turn-text">{{ drawn.text }}</p>
           <div class="turn-actions">
             <button type="button" class="btn btn-sm btn-primary" (click)="store.completePending(drawn.id); store.ensureDraw()">
@@ -110,8 +111,23 @@
             </button>
             <a routerLink="/sorteio" class="btn btn-sm btn-ghost">Ver fila</a>
           </div>
-        </article>
-      }
+        } @else if (store.openPending().length === 0) {
+          <p class="turn-quiet">
+            A fila está vazia. Jogue ali qualquer pendência solta e o app passa a
+            sortear uma por dia para você.
+          </p>
+          <div class="turn-actions">
+            <a routerLink="/sorteio" class="btn btn-sm btn-primary">Abrir a fila</a>
+          </div>
+        } @else {
+          <p class="turn-quiet">
+            Você adiou tudo que estava disponível hoje. Amanhã elas voltam para a roda.
+          </p>
+          <div class="turn-actions">
+            <a routerLink="/sorteio" class="btn btn-sm">Ver fila</a>
+          </div>
+        }
+      </article>
 
       <article class="card">
         <div class="card-head">

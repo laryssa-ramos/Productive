@@ -41,6 +41,8 @@ export class SyncService {
   private lastSyncedAt = '';
 
   readonly enabled = syncEnabled();
+  /** Quem está logado — outras camadas de sincronização se penduram nisto. */
+  readonly currentUserId = signal<string | null>(null);
   readonly status = signal<SyncStatus>(this.enabled ? 'signed-out' : 'disabled');
   readonly email = signal<string | null>(null);
   readonly message = signal<string | null>(null);
@@ -73,6 +75,11 @@ export class SyncService {
     window.addEventListener('offline', () => this.status.set('offline'));
   }
 
+  /** O mesmo cliente é reaproveitado pelas notas, para não abrir duas sessões. */
+  getClient(): SupabaseClient | null {
+    return this.client;
+  }
+
   // ----------------------------------------------------------------- sessão
 
   async signIn(email: string): Promise<void> {
@@ -101,6 +108,7 @@ export class SyncService {
   private async onSession(session: Session | null): Promise<void> {
     if (!session) {
       this.userId = null;
+      this.currentUserId.set(null);
       this.email.set(null);
       this.lastSyncedAt = '';
       await this.unsubscribe();
@@ -109,6 +117,7 @@ export class SyncService {
     }
 
     this.userId = session.user.id;
+    this.currentUserId.set(session.user.id);
     this.email.set(session.user.email ?? null);
     await this.pull();
     this.subscribe();

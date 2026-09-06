@@ -135,6 +135,16 @@
   padding: 28px 32px 56px;
 }
 
+/* Modo foco da escrita: a casca do app sai da frente do texto. */
+.shell.is-focus {
+  grid-template-columns: minmax(0, 1fr);
+
+  .sidebar,
+  .menu-toggle {
+    display: none;
+  }
+}
+
 .toast {
   position: fixed;
   right: 20px;

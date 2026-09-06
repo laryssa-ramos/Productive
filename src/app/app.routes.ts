@@ -13,6 +13,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/tasks/tasks').then((m) => m.TasksPage),
   },
   {
+    path: 'escrita',
+    title: 'Escrita · Productive',
+    loadComponent: () => import('./pages/writing/writing').then((m) => m.WritingPage),
+  },
+  {
     path: 'sorteio',
     title: 'Sorteio · Productive',
     loadComponent: () => import('./pages/draw/draw').then((m) => m.DrawPage),

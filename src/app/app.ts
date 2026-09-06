@@ -1,9 +1,12 @@
 import { Component, inject, signal, viewChild, ElementRef } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ProductivityStore } from './core/productivity-store';
+import { NotesStore } from './core/notes-store';
+import { NotesSync } from './core/notes-sync';
 import { NotificationService } from './core/notifications';
 import { SyncService } from './core/sync';
 import { ThemeService } from './core/theme';
+import { UiService } from './core/ui';
 import { ReminderPanel } from './shared/reminder-panel/reminder-panel';
 import { SyncPanel } from './shared/sync-panel/sync-panel';
 import { toIsoDate } from './core/date-utils';
@@ -18,8 +21,12 @@ export class App {
   protected readonly store = inject(ProductivityStore);
   protected readonly theme = inject(ThemeService);
   protected readonly sync = inject(SyncService);
+  protected readonly notes = inject(NotesStore);
+  protected readonly ui = inject(UiService);
   // Injetado para o serviço existir desde o início: ele cuida do badge do ícone.
   private readonly notifications = inject(NotificationService);
+  // Idem: as notas precisam sincronizar mesmo sem a tela de escrita aberta.
+  private readonly notesSync = inject(NotesSync);
 
   protected readonly menuOpen = signal(false);
   protected readonly notice = signal<string | null>(null);

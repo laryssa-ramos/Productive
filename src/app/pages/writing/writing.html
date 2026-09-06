@@ -1,0 +1,201 @@
+<div class="writing" [class.is-focus]="ui.focusMode()">
+  <aside class="list-pane">
+    <div class="list-head">
+      <h1>Escrita</h1>
+      <button type="button" class="btn btn-sm btn-primary" (click)="create()">Nova</button>
+    </div>
+
+    <input
+      class="input"
+      type="search"
+      placeholder="Buscar no título e no texto…"
+      aria-label="Buscar notas"
+      [value]="query()"
+      (input)="onQuery($event)"
+    />
+
+    <div class="chips" role="group" aria-label="Filtrar por situação">
+      <button
+        type="button"
+        class="chip"
+        [class.is-on]="statusFilter() === 'all'"
+        (click)="statusFilter.set('all')"
+      >
+        Todas
+      </button>
+      @for (status of statusOrder; track status) {
+        <button
+          type="button"
+          class="chip"
+          [class.is-on]="statusFilter() === status"
+          (click)="statusFilter.set(status)"
+        >
+          {{ statusLabels[status] }}
+        </button>
+      }
+    </div>
+
+    <ul class="note-list">
+      @for (note of visible(); track note.id) {
+        <li>
+          <button
+            type="button"
+            class="note-item"
+            [class.is-on]="selected()?.id === note.id"
+            (click)="select(note)"
+          >
+            <span class="note-title">{{ note.title || 'Sem título' }}</span>
+            <span class="note-excerpt">{{ excerpt(note) || 'Vazia' }}</span>
+            <span class="note-meta">
+              <span class="badge">{{ statusLabels[note.status] }}</span>
+              <span class="dot" [style.background]="categoryColor(note)"></span>
+              {{ when(note) }}
+            </span>
+          </button>
+        </li>
+      } @empty {
+        <li>
+          <p class="empty">
+            @if (notes.notes().length === 0) {
+              Nenhuma nota ainda. Clique em <strong>Nova</strong> e comece a escrever.
+            } @else {
+              Nada encontrado com esse filtro.
+            }
+          </p>
+        </li>
+      }
+    </ul>
+
+    @if (notes.trashed().length > 0) {
+      <div class="trash">
+        <button type="button" class="btn btn-ghost btn-sm full" (click)="showTrash.set(!showTrash())">
+          Lixeira ({{ notes.trashed().length }})
+        </button>
+        @if (showTrash()) {
+          <ul class="trash-list">
+            @for (note of notes.trashed(); track note.id) {
+              <li>
+                <span class="trash-title">{{ note.title || 'Sem título' }}</span>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="notes.restore(note.id)">
+                  Restaurar
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" (click)="purge(note)">
+                  Excluir
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+  </aside>
+
+  <section class="editor-pane">
+    @if (selected(); as note) {
+      <div class="editor-head">
+        <input
+          class="title-input"
+          placeholder="Título da nota"
+          aria-label="Título"
+          [value]="note.title"
+          (input)="onTitle($event)"
+        />
+
+        <div class="editor-controls">
+          <select class="select" aria-label="Situação" (change)="onStatus($event)">
+            @for (status of statusOrder; track status) {
+              <option [value]="status" [selected]="note.status === status">
+                {{ statusLabels[status] }}
+              </option>
+            }
+          </select>
+
+          <select class="select" aria-label="Categoria" (change)="onCategory($event)">
+            <option value="" [selected]="note.categoryId === null">Sem categoria</option>
+            @for (category of store.categories(); track category.id) {
+              <option [value]="category.id" [selected]="note.categoryId === category.id">
+                {{ category.name }}
+              </option>
+            }
+          </select>
+
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class.btn-primary]="preview()"
+            (click)="preview.set(!preview())"
+          >
+            {{ preview() ? 'Editar' : 'Prévia' }}
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-sm"
+            (click)="ui.focusMode.set(!ui.focusMode())"
+            [attr.aria-pressed]="ui.focusMode()"
+          >
+            {{ ui.focusMode() ? 'Sair do foco' : 'Foco' }}
+          </button>
+        </div>
+      </div>
+
+      @if (!preview()) {
+        <div class="toolbar" role="toolbar" aria-label="Formatação">
+          <button type="button" (click)="format('bold')" title="Negrito"><strong>B</strong></button>
+          <button type="button" (click)="format('italic')" title="Itálico"><em>I</em></button>
+          <button type="button" (click)="format('heading')" title="Título">H</button>
+          <button type="button" (click)="format('list')" title="Lista">•</button>
+          <button type="button" (click)="format('quote')" title="Citação">”</button>
+          <button type="button" (click)="format('code')" title="Código">&lt;/&gt;</button>
+          <button type="button" (click)="format('link')" title="Link">↗</button>
+          <span class="toolbar-hint">Markdown — o texto sai limpo para qualquer blog.</span>
+        </div>
+
+        <textarea
+          #editor
+          class="editor"
+          placeholder="Escreva aqui. Use ## para títulos, - para listas, **negrito**…"
+          aria-label="Texto da nota"
+          [value]="note.body"
+          (input)="onBody($event)"
+        ></textarea>
+      } @else {
+        <article class="preview" [innerHTML]="rendered()"></article>
+      }
+
+      <div class="editor-foot">
+        <span class="counts">
+          {{ stats().words }} palavra{{ stats().words === 1 ? '' : 's' }} ·
+          {{ stats().minutes }} min de leitura
+        </span>
+
+        @if (notesSync.saving()) {
+          <span class="saving">salvando…</span>
+        } @else if (notesSync.lastSavedAt(); as at) {
+          <span class="saving">sincronizado</span>
+        }
+
+        <span class="foot-actions">
+          <button type="button" class="btn btn-ghost btn-sm" (click)="toTask(note)">
+            Virar tarefa
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="download(note)">
+            Baixar .md
+          </button>
+          <button type="button" class="btn btn-danger btn-sm" (click)="remove(note)">
+            Excluir
+          </button>
+        </span>
+      </div>
+    } @else {
+      <div class="editor-empty">
+        <h2>Um canto para escrever</h2>
+        <p>
+          Ideias de pauta, rascunhos de post, trechos soltos. Fica tudo aqui, sincronizado
+          com os seus outros aparelhos, e sai em Markdown para colar em qualquer lugar.
+        </p>
+        <button type="button" class="btn btn-primary" (click)="create()">Escrever a primeira</button>
+      </div>
+    }
+  </section>
+</div>
