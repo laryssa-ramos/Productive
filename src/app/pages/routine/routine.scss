@@ -1,0 +1,203 @@
+:host {
+  display: block;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page-head {
+  margin-bottom: 18px;
+
+  h1 {
+    font-size: 22px;
+  }
+}
+
+.page-sub {
+  margin: 2px 0 0;
+  color: var(--text-3);
+  font-size: 13px;
+
+  &::first-letter {
+    text-transform: uppercase;
+  }
+}
+
+.add {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 14px;
+
+  .input {
+    flex: 1;
+    min-height: 38px;
+  }
+}
+
+/* Os blocos ficam lado a lado, como colunas de um quadro. */
+.blocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px 12px;
+}
+
+.block-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.block-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  cursor: text;
+}
+
+.block-count {
+  flex: none;
+  color: var(--text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  height: 5px;
+  border-radius: 4px;
+  background: var(--track);
+  margin-bottom: 10px;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--good);
+  transition: width 200ms ease;
+}
+
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 4px;
+  border-radius: 7px;
+
+  &:hover {
+    background: var(--surface-2);
+  }
+
+  &:hover .item-actions,
+  &:focus-within .item-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/*
+ * Fora do fluxo de propósito: em coluna estreita, reservar espaço para dois
+ * botões faria o texto do item quebrar em duas linhas o tempo todo.
+ */
+.item-actions {
+  position: absolute;
+  right: 2px;
+  display: flex;
+  gap: 2px;
+  padding-left: 14px;
+  background: linear-gradient(to right, transparent, var(--surface-2) 14px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms;
+}
+
+.check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  font-size: 11px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--good);
+  }
+
+  &.is-checked {
+    border-color: var(--good);
+    background: var(--good);
+  }
+}
+
+.item-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.item.is-done .item-text {
+  color: var(--text-3);
+  text-decoration: line-through;
+}
+
+.tiny {
+  flex: none;
+  min-height: 22px;
+  padding: 0 6px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.item-input {
+  min-height: 28px;
+  font-size: 13px;
+}
+
+.add-item {
+  margin-top: 8px;
+
+  .input {
+    min-height: 32px;
+    border-color: transparent;
+    background: var(--surface-2);
+    font-size: 13px;
+
+    &:focus-visible {
+      border-color: var(--accent);
+    }
+  }
+}
+
+.block-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .item-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

@@ -518,3 +518,87 @@
   font-size: 13px;
   line-height: 1.45;
 }
+
+/* --------------------------------------------------------- projetos ativos */
+
+.project-list {
+  margin: 0;
+  padding: 12px 18px 16px;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    font-size: 13px;
+  }
+
+  li + li {
+    border-top: 1px solid var(--border);
+  }
+}
+
+.project-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ----------------------------------------------------------- rotina do dia */
+
+/* A coluna larga empilha o que é ação: tarefas em cima, rotina embaixo. */
+.main-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* Na largura da coluna principal, os blocos cabem lado a lado. */
+.routine-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  padding: 14px 18px 18px;
+}
+
+.routine-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.routine-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.routine-count {
+  color: var(--text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.routine-track {
+  grid-column: 1 / -1;
+  height: 4px;
+  border-radius: 3px;
+  background: var(--track);
+}
+
+.routine-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--good);
+  transition: width 200ms ease;
+}
+
+.routine-block.is-full .routine-name {
+  color: var(--text-3);
+}

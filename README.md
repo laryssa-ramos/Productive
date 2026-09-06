@@ -29,6 +29,18 @@ em vez de dar 404.
   um alvo numérico ("2 L", "30 min"). A tela mostra o que vale hoje, a sequência
   atual, o recorde e um histórico dos últimos 14 dias. Arquivar preserva o
   histórico; excluir apaga junto.
+- **Rotina** (`/rotina`): blocos com nome ("Manhã", "Antes de gravar", "Fim do
+  dia") e itens dentro. Sem horário — a ordem é sua, não a do relógio. Os itens
+  são marcáveis e **as marcações se limpam sozinhas na virada do dia**, porque uma
+  rotina existe para ser percorrida de novo amanhã. Cada bloco mostra o progresso
+  do dia; "Desmarcar tudo" serve para refazer um bloco no mesmo dia. Os itens são
+  editáveis no lugar (botão **Editar** ao passar o mouse, ou duplo clique no
+  texto), e os blocos aparecem no painel com o progresso de cada um.
+- **Projetos** (`/projetos`): a lista do que você está tocando agora. Só nome e,
+  se quiser, uma linha de descrição — sem prazo, sem tarefas penduradas, sem
+  cobrança. Cada projeto é **Em andamento**, **Pausado** ou **Concluído**, e os
+  em andamento aparecem no painel, na faixa "Hoje". A cor sai da paleta em
+  rodízio, para não virar mais uma decisão na hora de criar.
 - **Sorteio** (`/sorteio`): o lugar para despejar pendências soltas — só o texto,
   sem categoria, prazo ou prioridade. O app escolhe uma por dia e mostra no painel,
   para você fazer em vez de decidir. "Agora não" tira aquela da roda só de hoje;
@@ -226,6 +238,8 @@ src/app/
     tasks/                  lista e formulário de tarefas
     goals/                  metas diárias, sequências e histórico
     draw/                   pendências soltas e o sorteio do dia
+    projects/               lista de projetos em andamento
+    routine/                blocos de rotina
     writing/                editor de notas em Markdown
     categories/             CRUD de categorias
   shared/
@@ -258,13 +272,19 @@ Excluir uma nota não apaga a linha: grava `deletedAt`. Sem essa lápide, a excl
 feita no celular nunca chegaria ao computador — ele apenas reenviaria a nota de
 volta na sincronização seguinte. Esvaziar a lixeira é o que apaga de vez.
 
+A rotina não guarda histórico: cada item grava apenas **a data em que foi
+marcado**. Se essa data não é hoje, ele aparece desmarcado. Isso faz a limpeza
+diária acontecer sozinha, sem tarefa agendada e sem acumular registros — e é de
+propósito que não há sequência nem estatística aqui: constância ao longo do tempo
+é o trabalho das Metas, não da Rotina.
+
 O sorteio não é aleatório puro. Ele evita repetir uma pendência sorteada nos
 últimos 3 dias (desde que haja alternativa) e dá mais peso ao que está parado há
 mais tempo, para o que está encalhado aparecer mais. A escolha do dia fica
 gravada em `draw`, então recarregar a página não troca a sugestão — só o botão
 "agora não" troca, e a recusa vale apenas para aquele dia.
 
-O formato salvo está na versão 3. Dados gravados nas versões anteriores continuam
+O formato salvo está na versão 5. Dados gravados nas versões anteriores continuam
 sendo lidos: os campos que faltam entram vazios, tanto no localStorage quanto no
 que chega da nuvem.
 

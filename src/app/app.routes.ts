@@ -13,6 +13,16 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/tasks/tasks').then((m) => m.TasksPage),
   },
   {
+    path: 'rotina',
+    title: 'Rotina · Productive',
+    loadComponent: () => import('./pages/routine/routine').then((m) => m.RoutinePage),
+  },
+  {
+    path: 'projetos',
+    title: 'Projetos · Productive',
+    loadComponent: () => import('./pages/projects/projects').then((m) => m.ProjectsPage),
+  },
+  {
     path: 'escrita',
     title: 'Escrita · Productive',
     loadComponent: () => import('./pages/writing/writing').then((m) => m.WritingPage),

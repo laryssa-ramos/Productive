@@ -8,6 +8,10 @@ import {
   Goal,
   GoalLog,
   PendingItem,
+  Project,
+  ProjectStatus,
+  RoutineBlock,
+  RoutineItem,
   STATUS_ORDER,
   Task,
   TaskPriority,
@@ -17,7 +21,7 @@ import {
 import { addDays, daysUntil, fromIsoDate, todayIso } from './date-utils';
 
 const STORAGE_KEY = 'productive.data.v1';
-const DATA_VERSION = 3;
+const DATA_VERSION = 5;
 /** Dias de descanso antes de uma pendência poder ser sorteada de novo. */
 const RECENT_DRAW_DAYS = 3;
 /** Carimbo de uma instalação que ainda não foi tocada. */
@@ -95,12 +99,16 @@ export class ProductivityStore {
   private readonly _goalLogs = signal<GoalLog[]>([]);
   private readonly _pending = signal<PendingItem[]>([]);
   private readonly _draw = signal<DailyDraw | null>(null);
+  private readonly _projects = signal<Project[]>([]);
+  private readonly _routines = signal<RoutineBlock[]>([]);
   private readonly _updatedAt = signal(EPOCH);
 
   readonly categories = this._categories.asReadonly();
   readonly tasks = this._tasks.asReadonly();
   readonly goals = this._goals.asReadonly();
   readonly pending = this._pending.asReadonly();
+  readonly projects = this._projects.asReadonly();
+  readonly routines = this._routines.asReadonly();
   readonly updatedAt = this._updatedAt.asReadonly();
 
   readonly categoryMap = computed(
@@ -116,6 +124,8 @@ export class ProductivityStore {
       this._goalLogs.set(stored.goalLogs ?? []);
       this._pending.set(stored.pending ?? []);
       this._draw.set(stored.draw ?? null);
+      this._projects.set(stored.projects ?? []);
+      this._routines.set(stored.routines ?? []);
       this._updatedAt.set(stored.updatedAt ?? new Date().toISOString());
     } else {
       this._categories.set(seedCategories());
@@ -232,6 +242,8 @@ export class ProductivityStore {
       goalLogs: this._goalLogs(),
       pending: this._pending(),
       draw: this._draw(),
+      projects: this._projects(),
+      routines: this._routines(),
       updatedAt: this._updatedAt(),
     };
   }
@@ -248,6 +260,8 @@ export class ProductivityStore {
     this._goalLogs.set(data.goalLogs ?? []);
     this._pending.set(data.pending ?? []);
     this._draw.set(data.draw ?? null);
+    this._projects.set(data.projects ?? []);
+    this._routines.set(data.routines ?? []);
     this._updatedAt.set(data.updatedAt);
   }
 
@@ -522,6 +536,171 @@ export class ProductivityStore {
     this.touch();
   }
 
+  // ----------------------------------------------------------------- rotina
+
+  /** Os blocos com o estado de hoje já resolvido. */
+  readonly routineToday = computed(() => {
+    const today = todayIso();
+    return this._routines().map((block) => {
+      const items = block.items.map((item) => ({
+        ...item,
+        done: item.checkedOn === today,
+      }));
+      const done = items.filter((item) => item.done).length;
+      return {
+        block,
+        items,
+        done,
+        total: items.length,
+        percent: items.length === 0 ? 0 : Math.round((done / items.length) * 100),
+      };
+    });
+  });
+
+  readonly routineSummary = computed(() => {
+    const blocks = this.routineToday();
+    return {
+      blocks: blocks.length,
+      done: blocks.reduce((sum, block) => sum + block.done, 0),
+      total: blocks.reduce((sum, block) => sum + block.total, 0),
+    };
+  });
+
+  addRoutineBlock(name: string): RoutineBlock | null {
+    const clean = name.trim();
+    if (!clean) return null;
+
+    const block: RoutineBlock = {
+      id: newId(),
+      name: clean,
+      items: [],
+      createdAt: new Date().toISOString(),
+    };
+    this._routines.update((blocks) => [...blocks, block]);
+    this.touch();
+    return block;
+  }
+
+  renameRoutineBlock(id: string, name: string): void {
+    const clean = name.trim();
+    if (!clean) return;
+    this._routines.update((blocks) =>
+      blocks.map((block) => (block.id === id ? { ...block, name: clean } : block)),
+    );
+    this.touch();
+  }
+
+  deleteRoutineBlock(id: string): void {
+    this._routines.update((blocks) => blocks.filter((block) => block.id !== id));
+    this.touch();
+  }
+
+  addRoutineItem(blockId: string, text: string): void {
+    const clean = text.trim();
+    if (!clean) return;
+
+    const item: RoutineItem = { id: newId(), text: clean, checkedOn: null };
+    this.mapBlock(blockId, (block) => ({ ...block, items: [...block.items, item] }));
+  }
+
+  updateRoutineItem(blockId: string, itemId: string, text: string): void {
+    const clean = text.trim();
+    if (!clean) return;
+    this.mapBlock(blockId, (block) => ({
+      ...block,
+      items: block.items.map((item) => (item.id === itemId ? { ...item, text: clean } : item)),
+    }));
+  }
+
+  /** Marca ou desmarca no dia de hoje. */
+  toggleRoutineItem(blockId: string, itemId: string): void {
+    const today = todayIso();
+    this.mapBlock(blockId, (block) => ({
+      ...block,
+      items: block.items.map((item) =>
+        item.id === itemId
+          ? { ...item, checkedOn: item.checkedOn === today ? null : today }
+          : item,
+      ),
+    }));
+  }
+
+  deleteRoutineItem(blockId: string, itemId: string): void {
+    this.mapBlock(blockId, (block) => ({
+      ...block,
+      items: block.items.filter((item) => item.id !== itemId),
+    }));
+  }
+
+  /** Desmarca o bloco inteiro, para quem quiser refazer no mesmo dia. */
+  clearRoutineBlock(blockId: string): void {
+    this.mapBlock(blockId, (block) => ({
+      ...block,
+      items: block.items.map((item) => ({ ...item, checkedOn: null })),
+    }));
+  }
+
+  private mapBlock(id: string, fn: (block: RoutineBlock) => RoutineBlock): void {
+    this._routines.update((blocks) => blocks.map((block) => (block.id === id ? fn(block) : block)));
+    this.touch();
+  }
+
+  // ---------------------------------------------------------------- projetos
+
+  readonly activeProjects = computed(() =>
+    this._projects().filter((project) => project.status === 'active'),
+  );
+
+  readonly projectSummary = computed(() => {
+    const projects = this._projects();
+    return {
+      active: projects.filter((project) => project.status === 'active').length,
+      paused: projects.filter((project) => project.status === 'paused').length,
+      done: projects.filter((project) => project.status === 'done').length,
+    };
+  });
+
+  addProject(name: string, note = ''): Project | null {
+    const clean = name.trim();
+    if (!clean) return null;
+
+    const project: Project = {
+      id: newId(),
+      name: clean,
+      note: note.trim(),
+      status: 'active',
+      // A cor sai da paleta em rodízio: uma decisão a menos na hora de criar.
+      color: CATEGORY_COLORS[this._projects().length % CATEGORY_COLORS.length],
+      createdAt: new Date().toISOString(),
+    };
+    this._projects.update((projects) => [...projects, project]);
+    this.touch();
+    return project;
+  }
+
+  updateProject(id: string, name: string, note: string): void {
+    const clean = name.trim();
+    if (!clean) return;
+    this._projects.update((projects) =>
+      projects.map((project) =>
+        project.id === id ? { ...project, name: clean, note: note.trim() } : project,
+      ),
+    );
+    this.touch();
+  }
+
+  setProjectStatus(id: string, status: ProjectStatus): void {
+    this._projects.update((projects) =>
+      projects.map((project) => (project.id === id ? { ...project, status } : project)),
+    );
+    this.touch();
+  }
+
+  deleteProject(id: string): void {
+    this._projects.update((projects) => projects.filter((project) => project.id !== id));
+    this.touch();
+  }
+
   // -------------------------------------------------------------- pendências
 
   readonly openPending = computed(() => this._pending().filter((item) => item.doneAt === null));
@@ -742,6 +921,8 @@ export class ProductivityStore {
     this._goalLogs.set(parsed.goalLogs ?? []);
     this._pending.set(parsed.pending ?? []);
     this._draw.set(parsed.draw ?? null);
+    this._projects.set(parsed.projects ?? []);
+    this._routines.set(parsed.routines ?? []);
     this.touch();
   }
 
@@ -752,6 +933,8 @@ export class ProductivityStore {
     this._goalLogs.set([]);
     this._pending.set([]);
     this._draw.set(null);
+    this._projects.set([]);
+    this._routines.set([]);
     this.touch();
   }
 

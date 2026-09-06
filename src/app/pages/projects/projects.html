@@ -1,0 +1,96 @@
+<header class="page-head">
+  <div>
+    <h1>Projetos</h1>
+    <p class="page-sub">No que você está metida agora. Sem prazo, sem cobrança.</p>
+  </div>
+</header>
+
+<form class="card add" (submit)="add($event)">
+  <input
+    class="input"
+    placeholder="Nome do projeto. Escreva e dê Enter."
+    aria-label="Novo projeto"
+    autocomplete="off"
+    [value]="draft()"
+    (input)="onDraft($event)"
+  />
+  <button type="submit" class="btn btn-primary" [disabled]="draft().trim().length === 0">
+    Adicionar
+  </button>
+</form>
+
+@for (group of groups(); track group.status) {
+  <section class="card group">
+    <div class="card-head">
+      <h2 class="card-title">{{ group.label }}</h2>
+      <span class="card-sub">{{ group.projects.length }}</span>
+    </div>
+
+    <ul class="list">
+      @for (project of group.projects; track project.id) {
+        <li class="item" [class.is-quiet]="project.status !== 'active'">
+          <span class="dot" [style.background]="project.color"></span>
+
+          @if (editingId() === project.id) {
+            <div class="edit">
+              <input
+                class="input"
+                aria-label="Nome do projeto"
+                [value]="editName()"
+                (input)="onEditName($event)"
+                (keyup.enter)="saveEdit()"
+              />
+              <input
+                class="input"
+                placeholder="Uma linha sobre o projeto (opcional)"
+                aria-label="Descrição"
+                [value]="editNote()"
+                (input)="onEditNote($event)"
+                (keyup.enter)="saveEdit()"
+              />
+              <button type="button" class="btn btn-sm btn-primary" (click)="saveEdit()">
+                Salvar
+              </button>
+            </div>
+          } @else {
+            <div class="body">
+              <p class="name">{{ project.name }}</p>
+              @if (project.note) {
+                <p class="note">{{ project.note }}</p>
+              }
+            </div>
+
+            <div class="actions">
+              @if (project.status !== 'active') {
+                <button type="button" class="btn btn-ghost btn-sm" (click)="setStatus(project, 'active')">
+                  Retomar
+                </button>
+              }
+              @if (project.status === 'active') {
+                <button type="button" class="btn btn-ghost btn-sm" (click)="setStatus(project, 'paused')">
+                  Pausar
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="setStatus(project, 'done')">
+                  Concluir
+                </button>
+              }
+              <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(project)">
+                Editar
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" (click)="remove(project)">
+                Excluir
+              </button>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+} @empty {
+  <section class="card">
+    <p class="empty">
+      Nenhum projeto ainda. Escreva o nome de um ali em cima — depois ele aparece no
+      painel, para você não perder de vista no que está trabalhando.
+    </p>
+  </section>
+}

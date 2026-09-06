@@ -1,0 +1,142 @@
+<header class="page-head">
+  <div>
+    <h1>Rotina</h1>
+    <p class="page-sub">
+      {{ today }} ·
+      @if (store.routineSummary().total > 0) {
+        {{ store.routineSummary().done }} de {{ store.routineSummary().total }} feitos hoje
+      } @else {
+        sem itens ainda
+      }
+    </p>
+  </div>
+</header>
+
+<form class="card add" (submit)="addBlock($event)">
+  <input
+    class="input"
+    placeholder="Nome do bloco. Ex.: Manhã, Antes de gravar, Fim do dia."
+    aria-label="Novo bloco"
+    autocomplete="off"
+    [value]="newBlock()"
+    (input)="onNewBlock($event)"
+  />
+  <button type="submit" class="btn btn-primary" [disabled]="newBlock().trim().length === 0">
+    Criar bloco
+  </button>
+</form>
+
+<div class="blocks">
+  @for (row of store.routineToday(); track row.block.id) {
+    <section class="card block">
+      <div class="block-head">
+        @if (renamingId() === row.block.id) {
+          <input
+            class="input"
+            aria-label="Nome do bloco"
+            [value]="renameText()"
+            (input)="onRename($event)"
+            (keyup.enter)="saveRename()"
+            (blur)="saveRename()"
+          />
+        } @else {
+          <h2 class="block-name" (dblclick)="startRename(row.block)">{{ row.block.name }}</h2>
+          <span class="block-count">{{ row.done }}/{{ row.total }}</span>
+        }
+      </div>
+
+      @if (row.total > 0) {
+        <div class="track" role="img"
+          [attr.aria-label]="row.done + ' de ' + row.total + ' feitos neste bloco'">
+          <div class="fill" [style.width.%]="row.percent"></div>
+        </div>
+      }
+
+      <ul class="items">
+        @for (item of row.items; track item.id) {
+          <li class="item" [class.is-done]="item.done">
+            @if (editingItemId() === item.id) {
+              <input
+                class="input item-input"
+                [attr.aria-label]="'Editar ' + item.text"
+                [value]="editItemText()"
+                (input)="onEditItem($event)"
+                (keyup.enter)="saveEditItem(row.block.id)"
+                (keyup.escape)="cancelEditItem()"
+                (blur)="saveEditItem(row.block.id)"
+              />
+            } @else {
+              <button
+                type="button"
+                class="check"
+                [class.is-checked]="item.done"
+                (click)="store.toggleRoutineItem(row.block.id, item.id)"
+                [attr.aria-pressed]="item.done"
+                [attr.aria-label]="(item.done ? 'Desmarcar ' : 'Marcar ') + item.text"
+              >
+                @if (item.done) {
+                  <span aria-hidden="true">✓</span>
+                }
+              </button>
+              <span class="item-text" (dblclick)="startEditItem(item.id, item.text)">
+                {{ item.text }}
+              </span>
+              <span class="item-actions">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm tiny"
+                  (click)="startEditItem(item.id, item.text)"
+                  [attr.aria-label]="'Editar ' + item.text"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm tiny"
+                  (click)="removeItem(row.block.id, item.id, item.text)"
+                  [attr.aria-label]="'Remover ' + item.text"
+                >
+                  ×
+                </button>
+              </span>
+            }
+          </li>
+        } @empty {
+          <li><p class="empty">Bloco vazio. Escreva o primeiro item ali embaixo.</p></li>
+        }
+      </ul>
+
+      <form class="add-item" (submit)="addItem(row.block.id, $event)">
+        <input
+          class="input"
+          placeholder="Adicionar item…"
+          [attr.aria-label]="'Novo item em ' + row.block.name"
+          autocomplete="off"
+          [value]="draftFor(row.block.id)"
+          (input)="onDraft(row.block.id, $event)"
+        />
+      </form>
+
+      <div class="block-foot">
+        <button type="button" class="btn btn-ghost btn-sm" (click)="startRename(row.block)">
+          Renomear
+        </button>
+        @if (row.done > 0) {
+          <button type="button" class="btn btn-ghost btn-sm" (click)="store.clearRoutineBlock(row.block.id)">
+            Desmarcar tudo
+          </button>
+        }
+        <button type="button" class="btn btn-danger btn-sm" (click)="removeBlock(row.block)">
+          Excluir bloco
+        </button>
+      </div>
+    </section>
+  } @empty {
+    <section class="card">
+      <p class="empty">
+        Nenhum bloco ainda. Um bloco é um pedaço da sua rotina com um nome —
+        "Manhã", "Antes de gravar", "Fim do dia" — e as coisas que vão dentro dele.
+      </p>
+    </section>
+  }
+</div>

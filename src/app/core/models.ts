@@ -71,6 +71,51 @@ export interface DailyDraw {
   itemId: string;
 }
 
+/**
+ * Projeto: uma frente de trabalho em aberto. Sem prazo, sem tarefas penduradas —
+ * existe só para você (e o painel) lembrarem no que você está metida agora.
+ */
+export type ProjectStatus = 'active' | 'paused' | 'done';
+
+export interface Project {
+  id: string;
+  name: string;
+  /** Uma linha opcional dizendo o que é. */
+  note: string;
+  status: ProjectStatus;
+  color: string;
+  createdAt: string;
+}
+
+export const PROJECT_STATUS_ORDER: ProjectStatus[] = ['active', 'paused', 'done'];
+
+export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
+  active: 'Em andamento',
+  paused: 'Pausado',
+  done: 'Concluído',
+};
+
+/**
+ * Rotina em blocos: um nome ("Manhã", "Antes de gravar") e uma lista de coisas
+ * dentro. Sem horário — a ordem é a sua, não a do relógio.
+ */
+export interface RoutineItem {
+  id: string;
+  text: string;
+  /**
+   * Dia (yyyy-mm-dd) em que o item foi marcado. Guardar a data em vez de um
+   * booleano faz a rotina se limpar sozinha na virada do dia.
+   */
+  checkedOn: string | null;
+}
+
+export interface RoutineBlock {
+  id: string;
+  name: string;
+  items: RoutineItem[];
+  createdAt: string;
+}
+
 export interface AppData {
   version: number;
   categories: Category[];
@@ -79,6 +124,8 @@ export interface AppData {
   goalLogs: GoalLog[];
   pending: PendingItem[];
   draw: DailyDraw | null;
+  projects: Project[];
+  routines: RoutineBlock[];
   /** Momento da última alteração — é o que decide quem vence na sincronização. */
   updatedAt: string;
 }

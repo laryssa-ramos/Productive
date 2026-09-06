@@ -41,6 +41,22 @@
             <span class="nav-count">{{ store.summary().open }}</span>
           }
         </a>
+        <a routerLink="/rotina" routerLinkActive="is-active" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">⌗</span>
+          Rotina
+          @if (store.routineSummary().total > 0) {
+            <span class="nav-count">
+              {{ store.routineSummary().done }}/{{ store.routineSummary().total }}
+            </span>
+          }
+        </a>
+        <a routerLink="/projetos" routerLinkActive="is-active" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">▤</span>
+          Projetos
+          @if (store.projectSummary().active > 0) {
+            <span class="nav-count">{{ store.projectSummary().active }}</span>
+          }
+        </a>
         <a routerLink="/escrita" routerLinkActive="is-active" class="nav-link">
           <span class="nav-icon" aria-hidden="true">✎</span>
           Escrita

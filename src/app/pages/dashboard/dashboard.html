@@ -17,6 +17,7 @@
       <a routerLink="/tarefas" class="btn btn-primary">Criar primeira tarefa</a>
       <a routerLink="/metas" class="btn">Criar uma meta diária</a>
       <a routerLink="/sorteio" class="btn">Despejar pendências</a>
+      <a routerLink="/projetos" class="btn">Listar projetos</a>
       <a routerLink="/categorias" class="btn">Ajustar categorias</a>
     </div>
   </section>
@@ -53,6 +54,7 @@
   <p class="band-label">Hoje</p>
 
   <section class="row row-action">
+    <div class="main-stack">
     <article class="card focus-card">
       <div class="card-head">
         <div>
@@ -90,6 +92,35 @@
         }
       </ul>
     </article>
+
+    @if (store.routineSummary().total > 0) {
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <h2 class="card-title">Rotina de hoje</h2>
+            <p class="card-sub">
+              {{ store.routineSummary().done }} de {{ store.routineSummary().total }} feitos
+            </p>
+          </div>
+          <a routerLink="/rotina" class="card-sub link">marcar</a>
+        </div>
+
+        <div class="routine-board">
+          @for (row of store.routineToday(); track row.block.id) {
+            <div class="routine-block" [class.is-full]="row.total > 0 && row.done === row.total">
+              <p class="routine-head">
+                <span class="routine-name">{{ row.block.name }}</span>
+                <span class="routine-count">{{ row.done }}/{{ row.total }}</span>
+              </p>
+              <span class="routine-track">
+                <span class="routine-fill" [style.width.%]="row.percent"></span>
+              </span>
+            </div>
+          }
+        </div>
+      </article>
+    }
+    </div>
 
     <div class="side-stack">
       <article class="card turn">
@@ -170,6 +201,24 @@
           </ul>
         </div>
       </article>
+
+      @if (store.activeProjects().length > 0) {
+        <article class="card">
+          <div class="card-head">
+            <h2 class="card-title">Projetos agora</h2>
+            <a routerLink="/projetos" class="card-sub link">gerenciar</a>
+          </div>
+
+          <ul class="project-list">
+            @for (project of store.activeProjects(); track project.id) {
+              <li>
+                <span class="dot" [style.background]="project.color"></span>
+                <span class="project-name">{{ project.name }}</span>
+              </li>
+            }
+          </ul>
+        </article>
+      }
     </div>
   </section>
 
