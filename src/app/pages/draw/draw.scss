@@ -44,7 +44,7 @@
 
 .turn-label {
   margin: 0;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -174,7 +174,7 @@
 
 .current {
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-  color: var(--accent);
+  color: var(--accent-text);
   background: transparent;
 }
 

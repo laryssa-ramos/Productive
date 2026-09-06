@@ -369,7 +369,10 @@
   font-size: 12px;
 
   &.is-late {
-    color: var(--critical);
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--critical);
+    color: #fff;
     font-weight: 600;
   }
 }
@@ -489,7 +492,7 @@
 
 .turn-label {
   margin: 0;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.06em;

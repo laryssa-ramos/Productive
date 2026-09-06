@@ -33,11 +33,13 @@ export class ThemeService {
   }
 }
 
+/** Sem preferência salva, o app nasce escuro — é o visual escolhido para ele. */
 function readStoredMode(): ThemeMode {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === 'light' || stored === 'dark' ? stored : 'system';
+    if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
+    return 'dark';
   } catch {
-    return 'system';
+    return 'dark';
   }
 }

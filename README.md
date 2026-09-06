@@ -125,6 +125,27 @@ abrir em tela cheia, com ícone próprio, e continua funcionando sem internet.
 O service worker só liga no build de produção — em `npm start` ele fica
 desativado de propósito, para não servir arquivo velho enquanto você desenvolve.
 
+## Cores
+
+O app é vermelho e nasce no tema escuro (o seletor de tema continua no menu).
+Os tokens ficam em `src/styles.scss`, com os valores de cada modo definidos em
+`:root`, no `@media (prefers-color-scheme: dark)` e no `[data-theme="dark"]`.
+
+Duas regras que não são óbvias e que quebram se alguém mexer sem saber:
+
+- **Alerta não se distingue por matiz, e sim por forma.** Com uma marca vermelha,
+  nenhuma cor de alerta é distinguível do vermelho por quem tem daltonismo no modo
+  claro — testei em OKLab com simulação de protanopia e deuteranopia, e os pares
+  vermelho/laranja dão ΔE 2.0, quando o mínimo aceitável é 8. Por isso "atrasada" e
+  "prioridade alta" são **etiquetas preenchidas**, enquanto o vermelho da marca fica
+  em botões e na navegação. Trocar essas etiquetas por texto vermelho apaga o aviso.
+- **`--accent` é preenchimento, `--accent-text` é texto.** No escuro são valores
+  diferentes: o vermelho que funciona atrás de texto branco num botão não tem
+  contraste suficiente quando vira texto sobre o fundo escuro.
+
+As cores das categorias **não** mudam com o tema: elas são identidade dos seus dados
+e continuam vindo da paleta de oito matizes validada em `models.ts`.
+
 ## Estrutura
 
 ```

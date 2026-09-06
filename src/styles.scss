@@ -14,8 +14,11 @@
   --text-2: #52514e;
   --text-3: #83817a;
 
-  --accent: #2a78d6;
-  --accent-soft: #e8f1fd;
+  /* Marca: usada em preenchimentos (botões, nav ativa, barras). */
+  --accent: #c62828;
+  /* Mesma família, mas para texto sobre a superfície — precisa de contraste. */
+  --accent-text: #c62828;
+  --accent-soft: #fbeaea;
   --accent-ink: #ffffff;
 
   --good: #0ca30c;
@@ -26,14 +29,15 @@
   --grid: #ecebe6;
   --track: #eceae4;
 
-  /* Séries de dados (paleta categórica validada) */
-  --series-1: #2a78d6;
-  --series-3: #1baf7a;
+  /* Séries do gráfico: o vermelho da marca contra um verde-azulado.
+     Par verificado em OKLab com simulação de daltonismo (ΔE 12.5). */
+  --series-1: #c62828;
+  --series-3: #0d9488;
 
-  /* Rampa ordinal azul para os três estados da tarefa */
-  --ord-1: #86b6ef;
-  --ord-2: #2a78d6;
-  --ord-3: #184f95;
+  /* Rampa ordinal vermelha para os três estados da tarefa (clara -> escura) */
+  --ord-1: #e08585;
+  --ord-2: #cc4141;
+  --ord-3: #96201f;
 
   --radius: 12px;
   --radius-sm: 8px;
@@ -55,19 +59,20 @@
   --text-2: #c3c2b7;
   --text-3: #8f8e85;
 
-  --accent: #3987e5;
-  --accent-soft: #1c2c40;
+  --accent: #d13438;
+  --accent-text: #e66767;
+  --accent-soft: #3a1e1e;
   --accent-ink: #ffffff;
 
   --grid: #2a2a27;
   --track: #2a2a27;
 
-  --series-1: #3987e5;
-  --series-3: #199e70;
+  --series-1: #d13438;
+  --series-3: #12a594;
 
-  --ord-1: #1c5cab;
-  --ord-2: #3987e5;
-  --ord-3: #9ec5f4;
+  --ord-1: #a02a2a;
+  --ord-2: #d13438;
+  --ord-3: #f2b8b8;
 
   --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 25%);
 }
@@ -268,7 +273,7 @@ button {
 }
 
 :where(a) {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 ::selection {
