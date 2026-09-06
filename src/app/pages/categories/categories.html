@@ -1,0 +1,106 @@
+<header class="page-head">
+  <div>
+    <h1>Categorias</h1>
+    <p class="page-sub">Organize as tarefas do jeito que faz sentido pra você.</p>
+  </div>
+</header>
+
+<div class="layout">
+  <form class="card form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="card-head">
+      <h2 class="card-title">{{ editingId() ? 'Editar categoria' : 'Nova categoria' }}</h2>
+    </div>
+
+    <div class="card-body">
+      <div class="field">
+        <label class="label" for="name">Nome</label>
+        <input
+          id="name"
+          class="input"
+          formControlName="name"
+          placeholder="Ex.: Faculdade, Casa, Freelas…"
+          autocomplete="off"
+        />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <small class="error">Escolha um nome para a categoria.</small>
+        }
+        @if (error(); as message) {
+          <small class="error">{{ message }}</small>
+        }
+      </div>
+
+      <div class="field">
+        <span class="label">Cor</span>
+        <div class="swatches" role="radiogroup" aria-label="Cor da categoria">
+          @for (option of palette; track option) {
+            <button
+              type="button"
+              class="swatch"
+              role="radio"
+              [attr.aria-checked]="color() === option"
+              [class.is-on]="color() === option"
+              [style.background]="option"
+              (click)="pickColor(option)"
+            ></button>
+          }
+        </div>
+        <small class="hint">
+          Paleta escolhida para continuar legível para quem enxerga cores de forma diferente.
+        </small>
+      </div>
+
+      <div class="form-actions">
+        @if (editingId()) {
+          <button type="button" class="btn btn-ghost" (click)="cancel()">Cancelar</button>
+        }
+        <button type="submit" class="btn btn-primary">
+          {{ editingId() ? 'Salvar' : 'Criar categoria' }}
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <section class="card">
+    <div class="card-head">
+      <h2 class="card-title">Suas categorias</h2>
+      <span class="card-sub">{{ store.categories().length }} no total</span>
+    </div>
+
+    <ul class="cat-list">
+      @for (row of rows(); track row.category!.id) {
+        <li class="cat" [class.is-editing]="editingId() === row.category!.id">
+          <span class="swatch-dot" [style.background]="row.color"></span>
+
+          <div class="cat-info">
+            <p class="cat-name">{{ row.name }}</p>
+            <p class="cat-stats">
+              {{ row.total }} tarefa(s) · {{ row.done }} concluída(s)
+              @if (row.overdue > 0) {
+                <span class="late">· {{ row.overdue }} atrasada(s)</span>
+              }
+            </p>
+            <div class="mini-track" [attr.title]="row.percent + '% concluído'">
+              <div class="mini-fill" [style.width.%]="row.percent" [style.background]="row.color"></div>
+            </div>
+          </div>
+
+          <div class="cat-actions">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="edit(row.category!)">
+              Editar
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" (click)="remove(row.category!)">
+              Excluir
+            </button>
+          </div>
+        </li>
+      } @empty {
+        <li>
+          <p class="empty">
+            Nenhuma categoria ainda. Crie a primeira ao lado — depois é só usar em
+            <a routerLink="/tarefas">Tarefas</a>.
+          </p>
+        </li>
+      }
+    </ul>
+  </section>
+</div>

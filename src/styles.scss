@@ -1,1 +1,276 @@
-/* You can add global styles to this file, and also import other style files */
+/* Tokens, reset e classes utilitárias compartilhadas.
+   Cores de dados vêm da paleta categórica validada para daltonismo. */
+
+:root {
+  color-scheme: light;
+
+  --bg: #f4f3f0;
+  --surface: #ffffff;
+  --surface-2: #fbfaf8;
+  --border: #e2e0da;
+  --border-strong: #cdcac1;
+
+  --text: #0b0b0b;
+  --text-2: #52514e;
+  --text-3: #83817a;
+
+  --accent: #2a78d6;
+  --accent-soft: #e8f1fd;
+  --accent-ink: #ffffff;
+
+  --good: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+
+  --grid: #ecebe6;
+  --track: #eceae4;
+
+  /* Séries de dados (paleta categórica validada) */
+  --series-1: #2a78d6;
+  --series-3: #1baf7a;
+
+  /* Rampa ordinal azul para os três estados da tarefa */
+  --ord-1: #86b6ef;
+  --ord-2: #2a78d6;
+  --ord-3: #184f95;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgb(11 11 11 / 6%), 0 8px 24px rgb(11 11 11 / 4%);
+
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+@mixin dark-tokens {
+  color-scheme: dark;
+
+  --bg: #131312;
+  --surface: #1a1a19;
+  --surface-2: #212120;
+  --border: #33332f;
+  --border-strong: #46463f;
+
+  --text: #ffffff;
+  --text-2: #c3c2b7;
+  --text-3: #8f8e85;
+
+  --accent: #3987e5;
+  --accent-soft: #1c2c40;
+  --accent-ink: #ffffff;
+
+  --grid: #2a2a27;
+  --track: #2a2a27;
+
+  --series-1: #3987e5;
+  --series-3: #199e70;
+
+  --ord-1: #1c5cab;
+  --ord-2: #3987e5;
+  --ord-3: #9ec5f4;
+
+  --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 25%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    @include dark-tokens;
+  }
+}
+
+:root[data-theme='dark'] {
+  @include dark-tokens;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+button {
+  font: inherit;
+}
+
+/* ------------------------------------------------------------- componentes */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 0;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.card-sub {
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms, opacity 120ms;
+
+  &:hover:not(:disabled) {
+    background: var(--surface-2);
+    border-color: var(--text-3);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+
+  &:hover:not(:disabled) {
+    background: var(--accent);
+    border-color: var(--accent);
+    filter: brightness(1.08);
+  }
+}
+
+.btn-ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-2);
+}
+
+.btn-danger {
+  color: var(--critical);
+  border-color: transparent;
+  background: transparent;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--critical) 12%, transparent);
+    border-color: transparent;
+  }
+}
+
+.btn-sm {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+}
+
+.textarea {
+  min-height: 64px;
+  resize: vertical;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.empty {
+  padding: 28px 18px;
+  color: var(--text-3);
+  text-align: center;
+  font-size: 13px;
+}
+
+:where(a) {
+  color: var(--accent);
+}
+
+::selection {
+  background: var(--accent-soft);
+}

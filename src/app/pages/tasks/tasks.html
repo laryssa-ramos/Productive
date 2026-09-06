@@ -1,0 +1,278 @@
+<header class="page-head">
+  <div>
+    <h1>Tarefas</h1>
+    <p class="page-sub">
+      {{ filtered().length }} de {{ store.tasks().length }} tarefa(s) visíveis
+    </p>
+  </div>
+  <div class="head-actions">
+    @if (doneCount() > 0) {
+      <button type="button" class="btn" (click)="clearCompleted()">
+        Limpar concluídas ({{ doneCount() }})
+      </button>
+    }
+    <button type="button" class="btn btn-primary" (click)="openNew()">Nova tarefa</button>
+  </div>
+</header>
+
+@if (formOpen()) {
+  <form class="card form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="form-grid">
+      <div class="field span-2">
+        <label class="label" for="title">Título</label>
+        <input
+          id="title"
+          class="input"
+          formControlName="title"
+          placeholder="O que precisa ser feito?"
+          autocomplete="off"
+        />
+        @if (form.controls.title.touched && form.controls.title.invalid) {
+          <small class="error">Dê um nome para a tarefa.</small>
+        }
+      </div>
+
+      <div class="field">
+        <label class="label" for="category">Categoria</label>
+        <select id="category" class="select" formControlName="categoryId">
+          <option value="">Sem categoria</option>
+          @for (category of store.categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="label" for="priority">Prioridade</label>
+        <select id="priority" class="select" formControlName="priority">
+          @for (priority of priorityOrder; track priority) {
+            <option [value]="priority">{{ priorityLabels[priority] }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="label" for="status">Situação</label>
+        <select id="status" class="select" formControlName="status">
+          @for (status of statusOrder; track status) {
+            <option [value]="status">{{ statusLabels[status] }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="label" for="dueDate">Prazo</label>
+        <input id="dueDate" type="date" class="input" formControlName="dueDate" />
+      </div>
+
+      <div class="field span-2">
+        <label class="label" for="notes">Anotações</label>
+        <textarea
+          id="notes"
+          class="textarea"
+          formControlName="notes"
+          placeholder="Detalhes, links, próximos passos…"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <span class="form-hint">
+        {{ editingId() ? 'Editando uma tarefa existente.' : 'O formulário fica aberto para você cadastrar várias seguidas.' }}
+      </span>
+      <button type="button" class="btn btn-ghost" (click)="closeForm()">Fechar</button>
+      <button type="submit" class="btn btn-primary">
+        {{ editingId() ? 'Salvar alterações' : 'Adicionar' }}
+      </button>
+    </div>
+  </form>
+}
+
+<section class="card toolbar">
+  <input
+    class="input search"
+    type="search"
+    placeholder="Buscar por título ou anotação…"
+    [value]="query()"
+    (input)="onQuery($event)"
+    aria-label="Buscar tarefas"
+  />
+
+  <div class="chips" role="group" aria-label="Filtrar por categoria">
+    <button
+      type="button"
+      class="chip"
+      [class.is-on]="categoryFilter() === 'all'"
+      (click)="categoryFilter.set('all')"
+    >
+      Todas
+    </button>
+    @for (category of store.categories(); track category.id) {
+      <button
+        type="button"
+        class="chip"
+        [class.is-on]="categoryFilter() === category.id"
+        [style.--chip]="category.color"
+        (click)="categoryFilter.set(category.id)"
+      >
+        <span class="dot" [style.background]="category.color"></span>
+        {{ category.name }}
+      </button>
+    }
+    <button
+      type="button"
+      class="chip"
+      [class.is-on]="categoryFilter() === 'none'"
+      (click)="categoryFilter.set('none')"
+    >
+      Sem categoria
+    </button>
+  </div>
+
+  <div class="selects">
+    <select
+      class="select"
+      aria-label="Situação"
+      (change)="statusFilter.set($any($event.target).value)"
+    >
+      <option value="open" [selected]="statusFilter() === 'open'">Em aberto</option>
+      <option value="all" [selected]="statusFilter() === 'all'">Todas as situações</option>
+      @for (status of statusOrder; track status) {
+        <option [value]="status" [selected]="statusFilter() === status">
+          {{ statusLabels[status] }}
+        </option>
+      }
+    </select>
+
+    <select
+      class="select"
+      aria-label="Prioridade"
+      (change)="priorityFilter.set($any($event.target).value)"
+    >
+      <option value="all" [selected]="priorityFilter() === 'all'">Toda prioridade</option>
+      @for (priority of priorityOrder; track priority) {
+        <option [value]="priority" [selected]="priorityFilter() === priority">
+          {{ priorityLabels[priority] }}
+        </option>
+      }
+    </select>
+
+    <select
+      class="select"
+      aria-label="Ordenar por"
+      (change)="sortKey.set($any($event.target).value)"
+    >
+      <option value="due" [selected]="sortKey() === 'due'">Ordenar por prazo</option>
+      <option value="priority" [selected]="sortKey() === 'priority'">Ordenar por prioridade</option>
+      <option value="created" [selected]="sortKey() === 'created'">Mais recentes</option>
+      <option value="title" [selected]="sortKey() === 'title'">Ordem alfabética</option>
+    </select>
+
+    <div class="segmented" role="group" aria-label="Modo de exibição">
+      <button type="button" [class.is-on]="view() === 'grouped'" (click)="view.set('grouped')">
+        Por categoria
+      </button>
+      <button type="button" [class.is-on]="view() === 'list'" (click)="view.set('list')">
+        Lista
+      </button>
+    </div>
+
+    @if (hasFilters()) {
+      <button type="button" class="btn btn-ghost btn-sm" (click)="clearFilters()">
+        Limpar filtros
+      </button>
+    }
+  </div>
+</section>
+
+@if (filtered().length === 0) {
+  <section class="card">
+    <p class="empty">
+      @if (store.tasks().length === 0) {
+        Nenhuma tarefa ainda. Clique em <strong>Nova tarefa</strong> para começar.
+      } @else {
+        Nada encontrado com esses filtros.
+      }
+    </p>
+  </section>
+} @else if (view() === 'grouped') {
+  @for (group of groups(); track group.key) {
+    <section class="card group">
+      <div class="group-head">
+        <span class="dot" [style.background]="group.color"></span>
+        <h2 class="card-title">{{ group.name }}</h2>
+        <span class="group-count">{{ group.tasks.length }}</span>
+      </div>
+      <ul class="task-list">
+        @for (task of group.tasks; track task.id) {
+          <ng-container [ngTemplateOutlet]="taskRow" [ngTemplateOutletContext]="{ $implicit: task }" />
+        }
+      </ul>
+    </section>
+  }
+} @else {
+  <section class="card">
+    <ul class="task-list">
+      @for (task of filtered(); track task.id) {
+        <ng-container [ngTemplateOutlet]="taskRow" [ngTemplateOutletContext]="{ $implicit: task }" />
+      }
+    </ul>
+  </section>
+}
+
+<ng-template #taskRow let-value>
+  @let task = asTask(value);
+
+  <li class="task" [class.is-done]="task.status === 'done'">
+    <button
+      type="button"
+      class="check"
+      [class.is-checked]="task.status === 'done'"
+      (click)="store.toggleDone(task.id)"
+      [attr.aria-pressed]="task.status === 'done'"
+      [attr.aria-label]="(task.status === 'done' ? 'Reabrir ' : 'Concluir ') + task.title"
+    >
+      @if (task.status === 'done') {
+        <span aria-hidden="true">✓</span>
+      }
+    </button>
+
+    <div class="task-body">
+      <p class="task-title">{{ task.title }}</p>
+      @if (task.notes) {
+        <p class="task-notes">{{ task.notes }}</p>
+      }
+      <div class="task-meta">
+        <span class="badge">
+          <span class="dot" [style.background]="colorOf(task)"></span>
+          {{ categoryName(task) }}
+        </span>
+        <span class="badge priority" [attr.data-priority]="task.priority">
+          {{ priorityLabels[task.priority] }}
+        </span>
+        @if (task.status !== 'done') {
+          <span class="badge">{{ statusLabels[task.status] }}</span>
+        }
+        @if (task.dueDate) {
+          <span class="badge due" [class.is-late]="isOverdue(task)">{{ dueLabel(task) }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="task-actions">
+      <select
+        class="select status-select"
+        (change)="store.setStatus(task.id, $any($event.target).value)"
+        [attr.aria-label]="'Situação de ' + task.title"
+      >
+        @for (status of statusOrder; track status) {
+          <option [value]="status" [selected]="status === task.status">
+            {{ statusLabels[status] }}
+          </option>
+        }
+      </select>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="openEdit(task)">Editar</button>
+      <button type="button" class="btn btn-danger btn-sm" (click)="removeTask(task)">Excluir</button>
+    </div>
+  </li>
+</ng-template>
