@@ -26,6 +26,8 @@ export interface AppData {
   version: number;
   categories: Category[];
   tasks: Task[];
+  /** Momento da última alteração — é o que decide quem vence na sincronização. */
+  updatedAt: string;
 }
 
 export const STATUS_ORDER: TaskStatus[] = ['todo', 'doing', 'done'];

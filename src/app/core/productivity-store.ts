@@ -13,6 +13,8 @@ import { addDays, daysUntil, todayIso } from './date-utils';
 
 const STORAGE_KEY = 'productive.data.v1';
 const DATA_VERSION = 1;
+/** Carimbo de uma instalação que ainda não foi tocada. */
+const EPOCH = new Date(0).toISOString();
 
 export interface TaskDraft {
   title: string;
@@ -53,9 +55,11 @@ function newId(): string {
 export class ProductivityStore {
   private readonly _categories = signal<Category[]>([]);
   private readonly _tasks = signal<Task[]>([]);
+  private readonly _updatedAt = signal(EPOCH);
 
   readonly categories = this._categories.asReadonly();
   readonly tasks = this._tasks.asReadonly();
+  readonly updatedAt = this._updatedAt.asReadonly();
 
   readonly categoryMap = computed(
     () => new Map(this._categories().map((category) => [category.id, category])),
@@ -66,16 +70,13 @@ export class ProductivityStore {
     if (stored) {
       this._categories.set(stored.categories);
       this._tasks.set(stored.tasks);
+      this._updatedAt.set(stored.updatedAt ?? new Date().toISOString());
     } else {
       this._categories.set(seedCategories());
     }
 
     effect(() => {
-      const data: AppData = {
-        version: DATA_VERSION,
-        categories: this._categories(),
-        tasks: this._tasks(),
-      };
+      const data = this.snapshot();
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       } catch {
@@ -167,6 +168,34 @@ export class ProductivityStore {
     this.agenda().filter((task) => daysUntil(task.dueDate!) >= 0 && daysUntil(task.dueDate!) <= 7),
   );
 
+  /**
+   * Instalação nova, sem nenhuma alteração do usuário. Nesse caso a nuvem sempre
+   * vence — senão as categorias de exemplo apagariam os dados reais.
+   */
+  isPristine(): boolean {
+    return this._updatedAt() === EPOCH;
+  }
+
+  /** Cópia serializável do estado — usada na persistência e na sincronização. */
+  snapshot(): AppData {
+    return {
+      version: DATA_VERSION,
+      categories: this._categories(),
+      tasks: this._tasks(),
+      updatedAt: this._updatedAt(),
+    };
+  }
+
+  /**
+   * Adota um estado vindo de fora (nuvem) sem carimbar hora nova: o carimbo é o
+   * do próprio dado remoto, senão as duas pontas ficariam se ultrapassando.
+   */
+  applyRemote(data: AppData): void {
+    this._categories.set(data.categories);
+    this._tasks.set(data.tasks);
+    this._updatedAt.set(data.updatedAt);
+  }
+
   categoryOf(task: Task): Category | null {
     return task.categoryId === null ? null : (this.categoryMap().get(task.categoryId) ?? null);
   }
@@ -191,6 +220,7 @@ export class ProductivityStore {
       completedAt: draft.status === 'done' ? now : null,
     };
     this._tasks.update((tasks) => [task, ...tasks]);
+    this.touch();
     return task;
   }
 
@@ -211,6 +241,7 @@ export class ProductivityStore {
           : task,
       ),
     );
+    this.touch();
   }
 
   setStatus(id: string, status: TaskStatus): void {
@@ -219,6 +250,7 @@ export class ProductivityStore {
         task.id === id ? { ...task, status, completedAt: completionStamp(task, status) } : task,
       ),
     );
+    this.touch();
   }
 
   toggleDone(id: string): void {
@@ -229,11 +261,13 @@ export class ProductivityStore {
 
   deleteTask(id: string): void {
     this._tasks.update((tasks) => tasks.filter((task) => task.id !== id));
+    this.touch();
   }
 
   clearCompleted(): number {
     const removed = this._tasks().filter((task) => task.status === 'done').length;
     this._tasks.update((tasks) => tasks.filter((task) => task.status !== 'done'));
+    this.touch();
     return removed;
   }
 
@@ -253,6 +287,7 @@ export class ProductivityStore {
       createdAt: new Date().toISOString(),
     };
     this._categories.update((categories) => [...categories, category]);
+    this.touch();
     return category;
   }
 
@@ -262,6 +297,7 @@ export class ProductivityStore {
         category.id === id ? { ...category, name: name.trim(), color } : category,
       ),
     );
+    this.touch();
   }
 
   /** Remove a categoria; as tarefas dela ficam "Sem categoria". */
@@ -270,6 +306,7 @@ export class ProductivityStore {
     this._tasks.update((tasks) =>
       tasks.map((task) => (task.categoryId === id ? { ...task, categoryId: null } : task)),
     );
+    this.touch();
   }
 
   countByCategory(id: string): number {
@@ -279,11 +316,7 @@ export class ProductivityStore {
   // ---------------------------------------------------------------- backup
 
   exportJson(): string {
-    return JSON.stringify(
-      { version: DATA_VERSION, categories: this._categories(), tasks: this._tasks() },
-      null,
-      2,
-    );
+    return JSON.stringify(this.snapshot(), null, 2);
   }
 
   /** Substitui todo o conteúdo. Lança erro se o arquivo não tiver o formato esperado. */
@@ -294,11 +327,17 @@ export class ProductivityStore {
     }
     this._categories.set(parsed.categories);
     this._tasks.set(parsed.tasks);
+    this.touch();
   }
 
   resetAll(): void {
     this._categories.set(seedCategories());
     this._tasks.set([]);
+    this.touch();
+  }
+
+  private touch(): void {
+    this._updatedAt.set(new Date().toISOString());
   }
 
   private read(): AppData | null {

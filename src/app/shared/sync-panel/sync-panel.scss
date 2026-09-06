@@ -1,0 +1,79 @@
+.sync {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.foot-title {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.foot-hint {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.problem {
+  color: var(--critical);
+}
+
+.sync-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.account {
+  margin: 0;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--text-3);
+  font-size: 11px;
+
+  &::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--good);
+  }
+
+  &[data-state='syncing']::before {
+    background: var(--warning);
+  }
+
+  &[data-state='offline']::before {
+    background: var(--text-3);
+  }
+
+  &[data-state='error']::before {
+    background: var(--critical);
+  }
+}
+
+.foot-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.full {
+  width: 100%;
+}

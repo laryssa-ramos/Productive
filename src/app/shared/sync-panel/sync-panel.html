@@ -1,0 +1,52 @@
+@if (sync.enabled) {
+  <section class="sync">
+    @switch (sync.status()) {
+      @case ('signed-out') {
+        <p class="foot-title">Sincronizar aparelhos</p>
+        <p class="foot-hint">
+          Entre com seu e-mail para ver as mesmas tarefas no celular e no computador.
+        </p>
+        <form class="sync-form" (submit)="submit($event)">
+          <input
+            class="input"
+            type="email"
+            name="email"
+            placeholder="seu@email.com"
+            autocomplete="email"
+            required
+            [value]="email()"
+            (input)="onEmail($event)"
+            aria-label="Seu e-mail"
+          />
+          <button type="submit" class="btn btn-sm full" [disabled]="sending()">
+            {{ sending() ? 'Enviando…' : 'Receber link de acesso' }}
+          </button>
+        </form>
+      }
+
+      @case ('link-sent') {
+        <p class="foot-title">Confira seu e-mail</p>
+        <p class="foot-hint">
+          Enviamos um link para <strong>{{ sync.email() }}</strong>. Abra o link neste aparelho
+          para conectar. O link vale por uma hora.
+        </p>
+        <button type="button" class="btn btn-ghost btn-sm full" (click)="reset()">
+          Usar outro e-mail
+        </button>
+      }
+
+      @default {
+        <p class="foot-title">Sincronizado</p>
+        <p class="account">{{ sync.email() }}</p>
+        <p class="state" [attr.data-state]="sync.status()">{{ statusLabel() }}</p>
+        @if (sync.message(); as problem) {
+          <p class="foot-hint problem">{{ problem }}</p>
+        }
+        <div class="foot-actions">
+          <button type="button" class="btn btn-sm" (click)="sync.refresh()">Atualizar</button>
+          <button type="button" class="btn btn-sm" (click)="sync.signOut()">Sair</button>
+        </div>
+      }
+    }
+  </section>
+}

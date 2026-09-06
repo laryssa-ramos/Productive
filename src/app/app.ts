@@ -1,23 +1,31 @@
 import { Component, inject, signal, viewChild, ElementRef } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ProductivityStore } from './core/productivity-store';
+import { SyncService } from './core/sync';
 import { ThemeService } from './core/theme';
+import { SyncPanel } from './shared/sync-panel/sync-panel';
 import { toIsoDate } from './core/date-utils';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, SyncPanel],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App {
   protected readonly store = inject(ProductivityStore);
   protected readonly theme = inject(ThemeService);
+  protected readonly sync = inject(SyncService);
 
   protected readonly menuOpen = signal(false);
   protected readonly notice = signal<string | null>(null);
 
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
+
+  constructor() {
+    // Sem configuração do Supabase isto retorna na hora e o app segue só local.
+    void this.sync.init();
+  }
 
   protected exportData(): void {
     const blob = new Blob([this.store.exportJson()], { type: 'application/json' });

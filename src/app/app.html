@@ -46,9 +46,16 @@
         Tema: {{ theme.mode() === 'system' ? 'automático' : theme.mode() === 'dark' ? 'escuro' : 'claro' }}
       </button>
 
+      <app-sync-panel />
+
       <p class="foot-title">Seus dados</p>
       <p class="foot-hint">
-        Tudo fica salvo neste navegador. Exporte um backup antes de limpar o histórico.
+        @if (sync.status() === 'synced' || sync.status() === 'syncing') {
+          Uma cópia fica neste navegador e outra na sua conta. O backup em arquivo é o
+          seu plano B.
+        } @else {
+          Tudo fica salvo neste navegador. Exporte um backup antes de limpar o histórico.
+        }
       </p>
       <div class="foot-actions">
         <button type="button" class="btn btn-sm" (click)="exportData()">Exportar</button>
