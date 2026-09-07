@@ -1,0 +1,114 @@
+<header class="page-head">
+  <div>
+    <h1>Ideias</h1>
+    <p class="page-sub">
+      Um lugar para guardar o que passou pela cabeça. Nada aqui precisa ser feito.
+    </p>
+  </div>
+</header>
+
+<form class="card capture" (submit)="add($event)">
+  <input
+    class="input"
+    placeholder="Escreva a ideia e dê Enter."
+    aria-label="Nova ideia"
+    autocomplete="off"
+    [value]="draft()"
+    (input)="onDraft($event)"
+  />
+  <button type="submit" class="btn btn-primary" [disabled]="draft().trim().length === 0">
+    Guardar
+  </button>
+</form>
+
+<section class="card">
+  <div class="card-head">
+    <h2 class="card-title">Suas ideias</h2>
+    <span class="card-sub">{{ store.ideaSummary().open }}</span>
+  </div>
+
+  <ul class="list">
+    @for (idea of store.openIdeas(); track idea.id) {
+      <li class="item">
+        @if (editingId() === idea.id) {
+          <input
+            class="input"
+            aria-label="Editar ideia"
+            [value]="editText()"
+            (input)="onEdit($event)"
+            (keyup.enter)="saveEdit()"
+            (keyup.escape)="cancelEdit()"
+            (blur)="saveEdit()"
+          />
+        } @else {
+          <span class="bullet" aria-hidden="true"></span>
+          <span class="text" (dblclick)="startEdit(idea)">{{ idea.text }}</span>
+
+          <span class="actions">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="toTask(idea)">
+              Virar tarefa
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="toProject(idea)">
+              Virar projeto
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(idea)">
+              Editar
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="store.archiveIdea(idea.id)">
+              Guardar
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" (click)="remove(idea)">
+              Excluir
+            </button>
+          </span>
+        }
+      </li>
+    } @empty {
+      <li>
+        <p class="empty">
+          Nenhuma ideia guardada. Escreva a primeira ali em cima — depois ela pode
+          virar tarefa ou projeto, ou só continuar aqui.
+        </p>
+      </li>
+    }
+  </ul>
+</section>
+
+@if (store.archivedIdeas().length > 0) {
+  <section class="card">
+    <div class="card-head">
+      <h2 class="card-title">Guardadas</h2>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="showArchived.set(!showArchived())">
+        {{ showArchived() ? 'Esconder' : 'Mostrar' }} ({{ store.archivedIdeas().length }})
+      </button>
+    </div>
+
+    @if (showArchived()) {
+      <ul class="list">
+        @for (idea of store.archivedIdeas(); track idea.id) {
+          <li class="item is-quiet">
+            <span class="bullet" aria-hidden="true"></span>
+            <span class="text">{{ idea.text }}</span>
+            <span class="actions">
+              <button type="button" class="btn btn-ghost btn-sm" (click)="store.restoreIdea(idea.id)">
+                Trazer de volta
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" (click)="remove(idea)">
+                Excluir
+              </button>
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}
+
+@if (notice(); as message) {
+  <p class="toast" role="status">
+    {{ message }}
+    @if (noticeLink(); as link) {
+      <a [routerLink]="link">Ver</a>
+    }
+  </p>
+}

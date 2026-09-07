@@ -1,0 +1,262 @@
+<header class="page-head">
+  <div>
+    <h1>Tudo</h1>
+    <p class="page-sub">
+      @if (selected().length === 0) {
+        escolha o que quer ver
+      } @else {
+        {{ total() }} item(ns) em {{ selected().length }} lista(s)
+      }
+    </p>
+  </div>
+</header>
+
+<section class="card picker">
+  <div class="chips" role="group" aria-label="O que mostrar">
+    @for (source of sources; track source.id) {
+      <button
+        type="button"
+        class="chip"
+        [class.is-on]="isOn(source.id)"
+        [attr.aria-pressed]="isOn(source.id)"
+        (click)="toggle(source.id)"
+      >
+        {{ source.label }}
+        <span class="chip-count">{{ counts()[source.id] }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="picker-actions">
+    <button type="button" class="btn btn-ghost btn-sm" (click)="selectAll()">Tudo</button>
+    <button type="button" class="btn btn-ghost btn-sm" (click)="clearAll()">Nada</button>
+  </div>
+</section>
+
+@if (selected().length === 0) {
+  <section class="card">
+    <p class="empty">
+      Nenhuma lista selecionada. Marque acima o que você quer ver de uma vez —
+      tarefas e pendências, ou projetos e rotina, ou tudo junto.
+    </p>
+  </section>
+}
+
+@if (isOn('tasks')) {
+  <section class="card block">
+    <div class="card-head">
+      <h2 class="card-title">Tarefas</h2>
+      <a routerLink="/tarefas" class="card-sub link">abrir</a>
+    </div>
+    <ul class="list">
+      @for (task of tasks(); track task.id) {
+        <li class="row">
+          <button
+            type="button"
+            class="check"
+            (click)="store.toggleDone(task.id)"
+            [attr.aria-label]="'Concluir ' + task.title"
+          ></button>
+          <span class="body">
+            <span class="text">{{ task.title }}</span>
+            <span class="meta">
+              <span class="dot" [style.background]="colorOf(task)"></span>
+              {{ categoryName(task) }} · {{ priorityLabels[task.priority] }}
+            </span>
+          </span>
+          @if (task.dueDate) {
+            <span class="due" [class.is-late]="isOverdue(task)">{{ dueLabel(task) }}</span>
+          }
+        </li>
+      } @empty {
+        <li><p class="empty">Nenhuma tarefa em aberto.</p></li>
+      }
+    </ul>
+  </section>
+}
+
+@if (isOn('pending')) {
+  <section class="card block">
+    <div class="card-head">
+      <h2 class="card-title">Pendências</h2>
+      <a routerLink="/sorteio" class="card-sub link">abrir</a>
+    </div>
+    <ul class="list">
+      @for (item of store.openPending(); track item.id) {
+        <li class="row">
+          <button
+            type="button"
+            class="check"
+            (click)="store.completePending(item.id)"
+            [attr.aria-label]="'Concluir ' + item.text"
+          ></button>
+          <span class="body">
+            <span class="text">{{ item.text }}</span>
+          </span>
+          @if (store.drawnToday()?.id === item.id) {
+            <span class="badge current">é a da vez</span>
+          }
+        </li>
+      } @empty {
+        <li><p class="empty">A fila está vazia.</p></li>
+      }
+    </ul>
+  </section>
+}
+
+@if (isOn('ideas')) {
+  <section class="card block">
+    <div class="card-head">
+      <h2 class="card-title">Ideias</h2>
+      <a routerLink="/ideias" class="card-sub link">abrir</a>
+    </div>
+    <ul class="list">
+      @for (idea of store.openIdeas(); track idea.id) {
+        <li class="row">
+          <span class="dot standalone"></span>
+          <span class="body"><span class="text">{{ idea.text }}</span></span>
+        </li>
+      } @empty {
+        <li><p class="empty">Nenhuma ideia guardada.</p></li>
+      }
+    </ul>
+  </section>
+}
+
+@if (isOn('goals')) {
+  <section class="card block">
+    <div class="card-head">
+      <h2 class="card-title">Metas de hoje</h2>
+      <a routerLink="/metas" class="card-sub link">abrir</a>
+    </div>
+    <ul class="list">
+      @for (row of store.goalsToday(); track row.goal.id) {
+        <li class="row" [class.is-done]="row.done">
+          @if (row.goal.target === 1) {
+            <button
+              type="button"
+              class="check"
+              [class.is-checked]="row.done"
+              (click)="store.toggleGoal(row.goal.id, today)"
+              [attr.aria-label]="(row.done ? 'Desmarcar ' : 'Marcar ') + row.goal.name"
+            >
+              @if (row.done) {
+                <span aria-hidden="true">✓</span>
+              }
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="check is-counter"
+              [class.is-checked]="row.done"
+              (click)="store.bumpGoal(row.goal.id, today, 1)"
+              [disabled]="row.done"
+              [attr.aria-label]="'Somar em ' + row.goal.name"
+            >
+              +
+            </button>
+          }
+          <span class="body">
+            <span class="text">{{ row.goal.name }}</span>
+            <span class="meta">
+              <span class="dot" [style.background]="row.color"></span>
+              {{ row.categoryName }}
+              @if (row.goal.target > 1) {
+                · {{ row.value }}/{{ row.goal.target }} {{ row.goal.unit }}
+              }
+            </span>
+          </span>
+          @if (row.streak > 0) {
+            <span class="badge streak">{{ row.streak }}d</span>
+          }
+        </li>
+      } @empty {
+        <li><p class="empty">Nenhuma meta vale para hoje.</p></li>
+      }
+    </ul>
+  </section>
+}
+
+@if (isOn('routine')) {
+  <section class="card block">
+    <div class="card-head">
+      <h2 class="card-title">Rotina</h2>
+      <a routerLink="/rotina" class="card-sub link">abrir</a>
+    </div>
+
+    @for (block of store.routineToday(); track block.block.id) {
+      <div class="sub">
+        <p class="sub-head">
+          <span>{{ block.block.name }}</span>
+          <span class="sub-count">{{ block.done }}/{{ block.total }}</span>
+        </p>
+        <ul class="list">
+          @for (item of block.items; track item.id) {
+            <li class="row" [class.is-done]="item.done">
+              <button
+                type="button"
+                class="check"
+                [class.is-checked]="item.done"
+                (click)="store.toggleRoutineItem(block.block.id, item.id)"
+                [attr.aria-label]="(item.done ? 'Desmarcar ' : 'Marcar ') + item.text"
+              >
+                @if (item.done) {
+                  <span aria-hidden="true">✓</span>
+                }
+              </button>
+              <span class="body"><span class="text">{{ item.text }}</span></span>
+            </li>
+          }
+        </ul>
+      </div>
+    } @empty {
+      <p class="empty">Nenhum bloco de rotina ainda.</p>
+    }
+  </section>
+}
+
+@if (isOn('projects')) {
+  <section class="card block">
+    <div class="card-head">
+      <h2 class="card-title">Projetos em andamento</h2>
+      <a routerLink="/projetos" class="card-sub link">abrir</a>
+    </div>
+    <ul class="list">
+      @for (project of store.activeProjects(); track project.id) {
+        <li class="row">
+          <span class="dot standalone" [style.background]="project.color"></span>
+          <span class="body">
+            <span class="text">{{ project.name }}</span>
+            @if (project.note) {
+              <span class="meta">{{ project.note }}</span>
+            }
+          </span>
+        </li>
+      } @empty {
+        <li><p class="empty">Nenhum projeto em andamento.</p></li>
+      }
+    </ul>
+  </section>
+}
+
+@if (isOn('notes')) {
+  <section class="card block">
+    <div class="card-head">
+      <h2 class="card-title">Escrita</h2>
+      <a routerLink="/escrita" class="card-sub link">abrir</a>
+    </div>
+    <ul class="list">
+      @for (note of openNotes(); track note.id) {
+        <li class="row">
+          <span class="dot standalone"></span>
+          <span class="body">
+            <span class="text">{{ note.title || 'Sem título' }}</span>
+            <span class="meta">{{ noteStatusLabels[note.status] }}</span>
+          </span>
+        </li>
+      } @empty {
+        <li><p class="empty">Nada em andamento na escrita.</p></li>
+      }
+    </ul>
+  </section>
+}

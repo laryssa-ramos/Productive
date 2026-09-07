@@ -1,0 +1,245 @@
+:host {
+  display: block;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.page-head {
+  margin-bottom: 18px;
+
+  h1 {
+    font-size: 22px;
+  }
+}
+
+.page-sub {
+  margin: 2px 0 0;
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+/* ---------------------------------------------------------------- seletor */
+
+.picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  position: sticky;
+  top: 20px;
+  z-index: 5;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-2);
+  }
+
+  &.is-on {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+}
+
+.chip-count {
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--track);
+  color: var(--text-3);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip.is-on .chip-count {
+  background: rgb(255 255 255 / 22%);
+  color: var(--accent-ink);
+}
+
+.picker-actions {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+
+/* ------------------------------------------------------------------ listas */
+
+.block {
+  margin-bottom: 12px;
+}
+
+.link {
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.list {
+  margin: 0;
+  padding: 6px 8px 10px;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+
+  & + .row {
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+  }
+
+  &:hover {
+    background: var(--surface-2);
+  }
+}
+
+.check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: var(--good);
+  }
+
+  &.is-checked {
+    border-color: var(--good);
+    background: var(--good);
+  }
+
+  &.is-counter {
+    color: var(--text-2);
+  }
+
+  &.is-counter.is-checked {
+    color: #fff;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.dot.standalone {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin: 0 5px;
+  background: var(--text-3);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.text {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.row.is-done .text {
+  color: var(--text-3);
+  text-decoration: line-through;
+}
+
+.due {
+  flex: none;
+  color: var(--text-2);
+  font-size: 12px;
+
+  &.is-late {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--critical);
+    color: #fff;
+    font-weight: 600;
+  }
+}
+
+.current {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent-text);
+  background: transparent;
+}
+
+.streak {
+  border-color: color-mix(in srgb, var(--good) 45%, transparent);
+  color: var(--good);
+  background: color-mix(in srgb, var(--good) 10%, transparent);
+}
+
+/* Sub-blocos da rotina dentro do mesmo card. */
+.sub + .sub {
+  border-top: 1px solid var(--border);
+}
+
+.sub-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 18px 0;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sub-count {
+  color: var(--text-3);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 700px) {
+  .picker {
+    position: static;
+  }
+}

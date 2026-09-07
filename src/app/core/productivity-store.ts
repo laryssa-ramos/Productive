@@ -7,6 +7,7 @@ import {
   EVERY_DAY,
   Goal,
   GoalLog,
+  Idea,
   PendingItem,
   Project,
   ProjectStatus,
@@ -21,7 +22,7 @@ import {
 import { addDays, daysUntil, fromIsoDate, todayIso } from './date-utils';
 
 const STORAGE_KEY = 'productive.data.v1';
-const DATA_VERSION = 5;
+const DATA_VERSION = 6;
 /** Dias de descanso antes de uma pendência poder ser sorteada de novo. */
 const RECENT_DRAW_DAYS = 3;
 /** Carimbo de uma instalação que ainda não foi tocada. */
@@ -101,6 +102,7 @@ export class ProductivityStore {
   private readonly _draw = signal<DailyDraw | null>(null);
   private readonly _projects = signal<Project[]>([]);
   private readonly _routines = signal<RoutineBlock[]>([]);
+  private readonly _ideas = signal<Idea[]>([]);
   private readonly _updatedAt = signal(EPOCH);
 
   readonly categories = this._categories.asReadonly();
@@ -109,6 +111,7 @@ export class ProductivityStore {
   readonly pending = this._pending.asReadonly();
   readonly projects = this._projects.asReadonly();
   readonly routines = this._routines.asReadonly();
+  readonly ideas = this._ideas.asReadonly();
   readonly updatedAt = this._updatedAt.asReadonly();
 
   readonly categoryMap = computed(
@@ -126,6 +129,7 @@ export class ProductivityStore {
       this._draw.set(stored.draw ?? null);
       this._projects.set(stored.projects ?? []);
       this._routines.set(stored.routines ?? []);
+      this._ideas.set(stored.ideas ?? []);
       this._updatedAt.set(stored.updatedAt ?? new Date().toISOString());
     } else {
       this._categories.set(seedCategories());
@@ -244,6 +248,7 @@ export class ProductivityStore {
       draw: this._draw(),
       projects: this._projects(),
       routines: this._routines(),
+      ideas: this._ideas(),
       updatedAt: this._updatedAt(),
     };
   }
@@ -262,6 +267,7 @@ export class ProductivityStore {
     this._draw.set(data.draw ?? null);
     this._projects.set(data.projects ?? []);
     this._routines.set(data.routines ?? []);
+    this._ideas.set(data.ideas ?? []);
     this._updatedAt.set(data.updatedAt);
   }
 
@@ -645,6 +651,95 @@ export class ProductivityStore {
     this.touch();
   }
 
+  // ------------------------------------------------------------------ ideias
+
+  readonly openIdeas = computed(() =>
+    this._ideas()
+      .filter((idea) => idea.archivedAt === null)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  );
+
+  readonly archivedIdeas = computed(() =>
+    this._ideas().filter((idea) => idea.archivedAt !== null),
+  );
+
+  readonly ideaSummary = computed(() => ({
+    open: this.openIdeas().length,
+    archived: this.archivedIdeas().length,
+  }));
+
+  addIdea(text: string): Idea | null {
+    const clean = text.trim();
+    if (!clean) return null;
+
+    const idea: Idea = {
+      id: newId(),
+      text: clean,
+      createdAt: new Date().toISOString(),
+      archivedAt: null,
+    };
+    this._ideas.update((ideas) => [idea, ...ideas]);
+    this.touch();
+    return idea;
+  }
+
+  updateIdea(id: string, text: string): void {
+    const clean = text.trim();
+    if (!clean) return;
+    this._ideas.update((ideas) =>
+      ideas.map((idea) => (idea.id === id ? { ...idea, text: clean } : idea)),
+    );
+    this.touch();
+  }
+
+  archiveIdea(id: string): void {
+    this._ideas.update((ideas) =>
+      ideas.map((idea) =>
+        idea.id === id ? { ...idea, archivedAt: new Date().toISOString() } : idea,
+      ),
+    );
+    this.touch();
+  }
+
+  restoreIdea(id: string): void {
+    this._ideas.update((ideas) =>
+      ideas.map((idea) => (idea.id === id ? { ...idea, archivedAt: null } : idea)),
+    );
+    this.touch();
+  }
+
+  deleteIdea(id: string): void {
+    this._ideas.update((ideas) => ideas.filter((idea) => idea.id !== id));
+    this.touch();
+  }
+
+  /** A ideia vira tarefa e sai daqui: o registro passa a ser a tarefa. */
+  promoteIdeaToTask(id: string): Task | null {
+    const idea = this._ideas().find((item) => item.id === id);
+    if (!idea) return null;
+
+    const task = this.addTask({
+      title: idea.text,
+      notes: 'Veio das ideias.',
+      categoryId: null,
+      status: 'todo',
+      priority: 'medium',
+      dueDate: null,
+    });
+    this.deleteIdea(id);
+    return task;
+  }
+
+  /** Idem, para quando a ideia é grande o bastante para virar frente de trabalho. */
+  promoteIdeaToProject(id: string): Project | null {
+    const idea = this._ideas().find((item) => item.id === id);
+    if (!idea) return null;
+
+    const project = this.addProject(idea.text);
+    this.deleteIdea(id);
+    return project;
+  }
+
   // ---------------------------------------------------------------- projetos
 
   readonly activeProjects = computed(() =>
@@ -923,6 +1018,7 @@ export class ProductivityStore {
     this._draw.set(parsed.draw ?? null);
     this._projects.set(parsed.projects ?? []);
     this._routines.set(parsed.routines ?? []);
+    this._ideas.set(parsed.ideas ?? []);
     this.touch();
   }
 
@@ -935,6 +1031,7 @@ export class ProductivityStore {
     this._draw.set(null);
     this._projects.set([]);
     this._routines.set([]);
+    this._ideas.set([]);
     this.touch();
   }
 

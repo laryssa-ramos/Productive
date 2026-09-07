@@ -116,6 +116,19 @@ export interface RoutineBlock {
   createdAt: string;
 }
 
+/**
+ * Ideia solta: qualquer coisa que passou pela cabeça e vale guardar. Diferente
+ * de uma pendência, ninguém precisa fazer — ela fica até virar algo ou ser
+ * arquivada. O "Repertório" da Escrita é o primo dela, restrito a pauta.
+ */
+export interface Idea {
+  id: string;
+  text: string;
+  createdAt: string;
+  /** Guardada: sai da lista principal sem perder o registro. */
+  archivedAt: string | null;
+}
+
 export interface AppData {
   version: number;
   categories: Category[];
@@ -126,6 +139,7 @@ export interface AppData {
   draw: DailyDraw | null;
   projects: Project[];
   routines: RoutineBlock[];
+  ideas: Idea[];
   /** Momento da última alteração — é o que decide quem vence na sincronização. */
   updatedAt: string;
 }

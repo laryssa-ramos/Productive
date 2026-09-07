@@ -585,10 +585,12 @@
 }
 
 .routine-track {
-  grid-column: 1 / -1;
+  /* É um <span>: sem isto ele fica inline, ignora a altura e a barra vaza do card. */
+  display: block;
   height: 4px;
   border-radius: 3px;
   background: var(--track);
+  overflow: hidden;
 }
 
 .routine-fill {

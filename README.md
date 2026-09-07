@@ -21,6 +21,11 @@ em vez de dar 404.
 - **Painel** (`/painel`): visão geral com tarefas em aberto, concluídas, atrasadas,
   taxa de conclusão, atividade dos últimos 14 dias, progresso por categoria e uma
   lista do que está mais urgente.
+- **Tudo** (`/tudo`): uma página com listas de todas as áreas ao mesmo tempo, e
+  fichas no topo para escolher quais aparecem — tarefas + pendências, ou projetos
+  + rotina + ideias, ou tudo junto. A seleção fica salva, então a página abre
+  do jeito que você deixou. Os itens são marcáveis ali mesmo: concluir tarefa e
+  pendência, marcar item de rotina, somar meta.
 - **Tarefas** (`/tarefas`): criar, editar, concluir e excluir. Busca por texto,
   filtros por categoria/situação/prioridade, ordenação e dois modos de exibição
   (agrupado por categoria ou lista corrida).
@@ -41,6 +46,12 @@ em vez de dar 404.
   cobrança. Cada projeto é **Em andamento**, **Pausado** ou **Concluído**, e os
   em andamento aparecem no painel, na faixa "Hoje". A cor sai da paleta em
   rodízio, para não virar mais uma decisão na hora de criar.
+- **Ideias** (`/ideias`): lista solta do que passou pela cabeça, no mesmo espírito
+  das pendências — só que nada aqui precisa ser feito. Cada ideia pode **virar
+  tarefa** ou **virar projeto** (aí ela sai da lista, porque o registro passa a ser
+  a tarefa ou o projeto), ser **guardada** para sair da frente sem sumir, ou
+  excluída. Não confundir com o **Repertório** da Escrita, que é a mesma coisa
+  restrita a pauta de conteúdo e vive junto dos rascunhos.
 - **Sorteio** (`/sorteio`): o lugar para despejar pendências soltas — só o texto,
   sem categoria, prazo ou prioridade. O app escolhe uma por dia e mostra no painel,
   para você fazer em vez de decidir. "Agora não" tira aquela da roda só de hoje;
@@ -240,6 +251,8 @@ src/app/
     draw/                   pendências soltas e o sorteio do dia
     projects/               lista de projetos em andamento
     routine/                blocos de rotina
+    overview/               a página "Tudo", com as listas combináveis
+    ideas/                  lista de ideias soltas
     writing/                editor de notas em Markdown
     categories/             CRUD de categorias
   shared/
@@ -284,7 +297,7 @@ mais tempo, para o que está encalhado aparecer mais. A escolha do dia fica
 gravada em `draw`, então recarregar a página não troca a sugestão — só o botão
 "agora não" troca, e a recusa vale apenas para aquele dia.
 
-O formato salvo está na versão 5. Dados gravados nas versões anteriores continuam
+O formato salvo está na versão 6. Dados gravados nas versões anteriores continuam
 sendo lidos: os campos que faltam entram vazios, tanto no localStorage quanto no
 que chega da nuvem.
 

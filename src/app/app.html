@@ -34,6 +34,10 @@
           <span class="nav-icon" aria-hidden="true">◧</span>
           Painel
         </a>
+        <a routerLink="/tudo" routerLinkActive="is-active" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">≡</span>
+          Tudo
+        </a>
         <a routerLink="/tarefas" routerLinkActive="is-active" class="nav-link">
           <span class="nav-icon" aria-hidden="true">☰</span>
           Tarefas
@@ -62,6 +66,13 @@
           Escrita
           @if (notes.notes().length > 0) {
             <span class="nav-count">{{ notes.notes().length }}</span>
+          }
+        </a>
+        <a routerLink="/ideias" routerLinkActive="is-active" class="nav-link">
+          <span class="nav-icon" aria-hidden="true">✧</span>
+          Ideias
+          @if (store.ideaSummary().open > 0) {
+            <span class="nav-count">{{ store.ideaSummary().open }}</span>
           }
         </a>
         <a routerLink="/sorteio" routerLinkActive="is-active" class="nav-link">

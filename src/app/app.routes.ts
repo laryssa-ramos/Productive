@@ -8,6 +8,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/dashboard/dashboard').then((m) => m.DashboardPage),
   },
   {
+    path: 'tudo',
+    title: 'Tudo · Productive',
+    loadComponent: () => import('./pages/overview/overview').then((m) => m.OverviewPage),
+  },
+  {
     path: 'tarefas',
     title: 'Tarefas · Productive',
     loadComponent: () => import('./pages/tasks/tasks').then((m) => m.TasksPage),
@@ -26,6 +31,11 @@ export const routes: Routes = [
     path: 'escrita',
     title: 'Escrita · Productive',
     loadComponent: () => import('./pages/writing/writing').then((m) => m.WritingPage),
+  },
+  {
+    path: 'ideias',
+    title: 'Ideias · Productive',
+    loadComponent: () => import('./pages/ideas/ideas').then((m) => m.IdeasPage),
   },
   {
     path: 'sorteio',
