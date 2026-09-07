@@ -77,6 +77,13 @@ export interface DailyDraw {
  */
 export type ProjectStatus = 'active' | 'paused' | 'done';
 
+/** Subtópico de um projeto: uma parte dele. Marcado fica marcado — não zera. */
+export interface ProjectItem {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -84,6 +91,7 @@ export interface Project {
   note: string;
   status: ProjectStatus;
   color: string;
+  items: ProjectItem[];
   createdAt: string;
 }
 

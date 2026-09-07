@@ -10,6 +10,7 @@ import {
   Idea,
   PendingItem,
   Project,
+  ProjectItem,
   ProjectStatus,
   RoutineBlock,
   RoutineItem,
@@ -22,7 +23,7 @@ import {
 import { addDays, daysUntil, fromIsoDate, todayIso } from './date-utils';
 
 const STORAGE_KEY = 'productive.data.v1';
-const DATA_VERSION = 6;
+const DATA_VERSION = 7;
 /** Dias de descanso antes de uma pendência poder ser sorteada de novo. */
 const RECENT_DRAW_DAYS = 3;
 /** Carimbo de uma instalação que ainda não foi tocada. */
@@ -127,7 +128,7 @@ export class ProductivityStore {
       this._goalLogs.set(stored.goalLogs ?? []);
       this._pending.set(stored.pending ?? []);
       this._draw.set(stored.draw ?? null);
-      this._projects.set(stored.projects ?? []);
+      this._projects.set(withItems(stored.projects));
       this._routines.set(stored.routines ?? []);
       this._ideas.set(stored.ideas ?? []);
       this._updatedAt.set(stored.updatedAt ?? new Date().toISOString());
@@ -265,7 +266,7 @@ export class ProductivityStore {
     this._goalLogs.set(data.goalLogs ?? []);
     this._pending.set(data.pending ?? []);
     this._draw.set(data.draw ?? null);
-    this._projects.set(data.projects ?? []);
+    this._projects.set(withItems(data.projects));
     this._routines.set(data.routines ?? []);
     this._ideas.set(data.ideas ?? []);
     this._updatedAt.set(data.updatedAt);
@@ -651,6 +652,49 @@ export class ProductivityStore {
     this.touch();
   }
 
+  // ------------------------------------------------------------------- ordem
+
+  /**
+   * Reordenação manual. Todas recebem os ids visíveis na tela, porque a ordem
+   * que importa é a que você está vendo, não a do array cru.
+   */
+  moveTask(id: string, direction: -1 | 1, visibleIds: string[]): void {
+    this._tasks.update((tasks) => reorder(tasks, id, direction, visibleIds));
+    this.touch();
+  }
+
+  movePending(id: string, direction: -1 | 1, visibleIds: string[]): void {
+    this._pending.update((items) => reorder(items, id, direction, visibleIds));
+    this.touch();
+  }
+
+  moveIdea(id: string, direction: -1 | 1, visibleIds: string[]): void {
+    this._ideas.update((ideas) => reorder(ideas, id, direction, visibleIds));
+    this.touch();
+  }
+
+  moveProject(id: string, direction: -1 | 1, visibleIds: string[]): void {
+    this._projects.update((projects) => reorder(projects, id, direction, visibleIds));
+    this.touch();
+  }
+
+  moveGoal(id: string, direction: -1 | 1, visibleIds: string[]): void {
+    this._goals.update((goals) => reorder(goals, id, direction, visibleIds));
+    this.touch();
+  }
+
+  moveRoutineBlock(id: string, direction: -1 | 1, visibleIds: string[]): void {
+    this._routines.update((blocks) => reorder(blocks, id, direction, visibleIds));
+    this.touch();
+  }
+
+  moveRoutineItem(blockId: string, itemId: string, direction: -1 | 1): void {
+    this.mapBlock(blockId, (block) => ({
+      ...block,
+      items: reorder(block.items, itemId, direction, block.items.map((item) => item.id)),
+    }));
+  }
+
   // ------------------------------------------------------------------ ideias
 
   readonly openIdeas = computed(() =>
@@ -766,6 +810,7 @@ export class ProductivityStore {
       status: 'active',
       // A cor sai da paleta em rodízio: uma decisão a menos na hora de criar.
       color: CATEGORY_COLORS[this._projects().length % CATEGORY_COLORS.length],
+      items: [],
       createdAt: new Date().toISOString(),
     };
     this._projects.update((projects) => [...projects, project]);
@@ -793,6 +838,60 @@ export class ProductivityStore {
 
   deleteProject(id: string): void {
     this._projects.update((projects) => projects.filter((project) => project.id !== id));
+    this.touch();
+  }
+
+  // ---------------------------------------------------- subtópicos de projeto
+
+  addProjectItem(projectId: string, text: string): void {
+    const clean = text.trim();
+    if (!clean) return;
+
+    const item: ProjectItem = { id: newId(), text: clean, done: false };
+    this.mapProject(projectId, (project) => ({
+      ...project,
+      items: [...project.items, item],
+    }));
+  }
+
+  updateProjectItem(projectId: string, itemId: string, text: string): void {
+    const clean = text.trim();
+    if (!clean) return;
+    this.mapProject(projectId, (project) => ({
+      ...project,
+      items: project.items.map((item) =>
+        item.id === itemId ? { ...item, text: clean } : item,
+      ),
+    }));
+  }
+
+  toggleProjectItem(projectId: string, itemId: string): void {
+    this.mapProject(projectId, (project) => ({
+      ...project,
+      items: project.items.map((item) =>
+        item.id === itemId ? { ...item, done: !item.done } : item,
+      ),
+    }));
+  }
+
+  deleteProjectItem(projectId: string, itemId: string): void {
+    this.mapProject(projectId, (project) => ({
+      ...project,
+      items: project.items.filter((item) => item.id !== itemId),
+    }));
+  }
+
+  moveProjectItem(projectId: string, itemId: string, direction: -1 | 1): void {
+    this.mapProject(projectId, (project) => ({
+      ...project,
+      items: reorder(project.items, itemId, direction, project.items.map((item) => item.id)),
+    }));
+  }
+
+  private mapProject(id: string, fn: (project: Project) => Project): void {
+    this._projects.update((projects) =>
+      projects.map((project) => (project.id === id ? fn(project) : project)),
+    );
     this.touch();
   }
 
@@ -1016,7 +1115,7 @@ export class ProductivityStore {
     this._goalLogs.set(parsed.goalLogs ?? []);
     this._pending.set(parsed.pending ?? []);
     this._draw.set(parsed.draw ?? null);
-    this._projects.set(parsed.projects ?? []);
+    this._projects.set(withItems(parsed.projects));
     this._routines.set(parsed.routines ?? []);
     this._ideas.set(parsed.ideas ?? []);
     this.touch();
@@ -1050,6 +1149,38 @@ export class ProductivityStore {
       return null;
     }
   }
+}
+
+/**
+ * Move um item dentro do array, usando a lista *visível* como referência de
+ * vizinhança. Sem isso, mover "para cima" numa lista filtrada pularia por cima
+ * de itens escondidos e o resultado pareceria aleatório.
+ */
+function reorder<T extends { id: string }>(
+  all: T[],
+  id: string,
+  direction: -1 | 1,
+  visibleIds: string[],
+): T[] {
+  const at = visibleIds.indexOf(id);
+  const neighbour = visibleIds[at + direction];
+  if (at < 0 || neighbour === undefined) return all;
+
+  const next = [...all];
+  const from = next.findIndex((item) => item.id === id);
+  if (from < 0) return all;
+
+  const [moved] = next.splice(from, 1);
+  const to = next.findIndex((item) => item.id === neighbour);
+  if (to < 0) return all;
+
+  next.splice(direction === -1 ? to : to + 1, 0, moved);
+  return next;
+}
+
+/** Projetos gravados antes dos subtópicos chegam sem a lista. */
+function withItems(projects: Project[] | undefined): Project[] {
+  return (projects ?? []).map((project) => ({ ...project, items: project.items ?? [] }));
 }
 
 function logKey(goalId: string, date: string): string {

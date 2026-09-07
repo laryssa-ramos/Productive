@@ -162,6 +162,7 @@
       aria-label="Ordenar por"
       (change)="sortKey.set($any($event.target).value)"
     >
+      <option value="manual" [selected]="sortKey() === 'manual'">Ordem manual</option>
       <option value="due" [selected]="sortKey() === 'due'">Ordenar por prazo</option>
       <option value="priority" [selected]="sortKey() === 'priority'">Ordenar por prioridade</option>
       <option value="created" [selected]="sortKey() === 'created'">Mais recentes</option>
@@ -205,7 +206,10 @@
       </div>
       <ul class="task-list">
         @for (task of group.tasks; track task.id) {
-          <ng-container [ngTemplateOutlet]="taskRow" [ngTemplateOutletContext]="{ $implicit: task }" />
+          <ng-container
+            [ngTemplateOutlet]="taskRow"
+            [ngTemplateOutletContext]="{ $implicit: task, scope: group.tasks, first: $first, last: $last }"
+          />
         }
       </ul>
     </section>
@@ -214,13 +218,16 @@
   <section class="card">
     <ul class="task-list">
       @for (task of filtered(); track task.id) {
-        <ng-container [ngTemplateOutlet]="taskRow" [ngTemplateOutletContext]="{ $implicit: task }" />
+        <ng-container
+          [ngTemplateOutlet]="taskRow"
+          [ngTemplateOutletContext]="{ $implicit: task, scope: filtered(), first: $first, last: $last }"
+        />
       }
     </ul>
   </section>
 }
 
-<ng-template #taskRow let-value>
+<ng-template #taskRow let-value let-scope="scope" let-first="first" let-last="last">
   @let task = asTask(value);
 
   <li class="task" [class.is-done]="task.status === 'done'">
@@ -260,6 +267,15 @@
     </div>
 
     <div class="task-actions">
+      @if (canReorder) {
+        <app-move-buttons
+          [label]="task.title"
+          [first]="first"
+          [last]="last"
+          (up)="move(task, -1, scope)"
+          (down)="move(task, 1, scope)"
+        />
+      }
       <select
         class="select status-select"
         (change)="store.setStatus(task.id, $any($event.target).value)"

@@ -42,8 +42,7 @@
 
 .item {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  flex-direction: column;
   padding: 10px 12px;
   border-radius: var(--radius-sm);
 
@@ -60,12 +59,20 @@
     opacity: 1;
   }
 
-  .dot {
-    margin-top: 6px;
-  }
-
   &.is-quiet .name {
     color: var(--text-3);
+  }
+}
+
+/* Cabeçalho da linha: o que era o próprio item antes dos subtópicos. */
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+
+  .dot {
+    margin-top: 6px;
   }
 }
 
@@ -119,5 +126,133 @@
     opacity: 1;
     width: 100%;
     padding-left: 18px;
+  }
+}
+
+/* ------------------------------------------------------------- subtópicos */
+
+.subs-toggle {
+  white-space: nowrap;
+}
+
+.subs {
+  margin: 8px 0 2px 18px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+
+.sub-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sub-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px;
+  border-radius: 6px;
+
+  &:hover {
+    background: var(--surface);
+  }
+
+  &:hover .sub-actions,
+  &:focus-within .sub-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  &.is-done .sub-text {
+    color: var(--text-3);
+    text-decoration: line-through;
+  }
+}
+
+.check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  font-size: 10px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--good);
+  }
+
+  &.is-checked {
+    border-color: var(--good);
+    background: var(--good);
+  }
+}
+
+.sub-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+}
+
+/* Fora do fluxo para o texto do subtópico não quebrar linha à toa. */
+.sub-actions {
+  position: absolute;
+  right: 2px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: 16px;
+  background: linear-gradient(to right, transparent, var(--surface) 16px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms;
+}
+
+.tiny {
+  min-height: 22px;
+  padding: 0 6px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.sub-empty {
+  padding: 4px 4px 6px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.sub-input {
+  min-height: 28px;
+  font-size: 13px;
+}
+
+.sub-add {
+  margin-top: 6px;
+
+  .input {
+    min-height: 30px;
+    border-color: transparent;
+    background: var(--surface-2);
+    font-size: 13px;
+
+    &:focus-visible {
+      border-color: var(--accent);
+    }
+  }
+}
+
+@media (max-width: 700px) {
+  .sub-actions {
+    position: static;
+    opacity: 1;
+    pointer-events: auto;
+    background: none;
+    padding-left: 0;
   }
 }

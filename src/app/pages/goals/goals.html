@@ -247,6 +247,13 @@
           </div>
 
           <div class="row-actions">
+            <app-move-buttons
+              [label]="row.goal.name"
+              [first]="$first"
+              [last]="$last"
+              (up)="move(row.goal, -1)"
+              (down)="move(row.goal, 1)"
+            />
             <button type="button" class="btn btn-ghost btn-sm" (click)="openEdit(row.goal)">
               Editar
             </button>

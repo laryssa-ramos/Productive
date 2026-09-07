@@ -45,6 +45,13 @@
           <span class="text" (dblclick)="startEdit(idea)">{{ idea.text }}</span>
 
           <span class="actions">
+            <app-move-buttons
+              [label]="idea.text"
+              [first]="$first"
+              [last]="$last"
+              (up)="move(idea, -1)"
+              (down)="move(idea, 1)"
+            />
             <button type="button" class="btn btn-ghost btn-sm" (click)="toTask(idea)">
               Virar tarefa
             </button>

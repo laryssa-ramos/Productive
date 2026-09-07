@@ -2,10 +2,11 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ProductivityStore } from '../../core/productivity-store';
 import { PendingItem } from '../../core/models';
+import { MoveButtons } from '../../shared/move-buttons/move-buttons';
 
 @Component({
   selector: 'app-draw',
-  imports: [RouterLink],
+  imports: [RouterLink, MoveButtons],
   templateUrl: './draw.html',
   styleUrl: './draw.scss',
 })
@@ -60,6 +61,10 @@ export class DrawPage {
   }
 
   // ------------------------------------------------------------------- edição
+
+  protected move(item: PendingItem, direction: -1 | 1): void {
+    this.store.movePending(item.id, direction, this.store.openPending().map((i) => i.id));
+  }
 
   protected startEdit(item: PendingItem): void {
     this.editingId.set(item.id);

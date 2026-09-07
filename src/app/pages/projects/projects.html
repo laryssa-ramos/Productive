@@ -29,6 +29,7 @@
     <ul class="list">
       @for (project of group.projects; track project.id) {
         <li class="item" [class.is-quiet]="project.status !== 'active'">
+          <div class="head">
           <span class="dot" [style.background]="project.color"></span>
 
           @if (editingId() === project.id) {
@@ -61,6 +62,25 @@
             </div>
 
             <div class="actions">
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm subs-toggle"
+                (click)="toggleExpanded(project.id)"
+                [attr.aria-expanded]="isExpanded(project.id)"
+              >
+                @if (project.items.length > 0) {
+                  Subtópicos {{ doneCount(project) }}/{{ project.items.length }}
+                } @else {
+                  Subtópicos
+                }
+              </button>
+              <app-move-buttons
+                [label]="project.name"
+                [first]="$first"
+                [last]="$last"
+                (up)="move(project, -1)"
+                (down)="move(project, 1)"
+              />
               @if (project.status !== 'active') {
                 <button type="button" class="btn btn-ghost btn-sm" (click)="setStatus(project, 'active')">
                   Retomar
@@ -80,6 +100,81 @@
               <button type="button" class="btn btn-danger btn-sm" (click)="remove(project)">
                 Excluir
               </button>
+            </div>
+          }
+          </div>
+
+          @if (isExpanded(project.id)) {
+            <div class="subs">
+              <ul class="sub-list">
+                @for (item of project.items; track item.id) {
+                  <li class="sub-item" [class.is-done]="item.done">
+                    @if (editingItemId() === item.id) {
+                      <input
+                        class="input sub-input"
+                        [attr.aria-label]="'Editar ' + item.text"
+                        [value]="editItemText()"
+                        (input)="onEditItem($event)"
+                        (keyup.enter)="saveEditItem(project.id)"
+                        (keyup.escape)="cancelEditItem()"
+                        (blur)="saveEditItem(project.id)"
+                      />
+                    } @else {
+                      <button
+                        type="button"
+                        class="check"
+                        [class.is-checked]="item.done"
+                        (click)="store.toggleProjectItem(project.id, item.id)"
+                        [attr.aria-pressed]="item.done"
+                        [attr.aria-label]="(item.done ? 'Desmarcar ' : 'Marcar ') + item.text"
+                      >
+                        @if (item.done) {
+                          <span aria-hidden="true">✓</span>
+                        }
+                      </button>
+                      <span class="sub-text" (dblclick)="startEditItem(item)">{{ item.text }}</span>
+                      <span class="sub-actions">
+                        <app-move-buttons
+                          [label]="item.text"
+                          [first]="$first"
+                          [last]="$last"
+                          (up)="store.moveProjectItem(project.id, item.id, -1)"
+                          (down)="store.moveProjectItem(project.id, item.id, 1)"
+                        />
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-sm tiny"
+                          (click)="startEditItem(item)"
+                          [attr.aria-label]="'Editar ' + item.text"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-danger btn-sm tiny"
+                          (click)="removeItem(project.id, item)"
+                          [attr.aria-label]="'Remover ' + item.text"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    }
+                  </li>
+                } @empty {
+                  <li class="sub-empty">Nenhum subtópico ainda.</li>
+                }
+              </ul>
+
+              <form class="sub-add" (submit)="addItem(project.id, $event)">
+                <input
+                  class="input"
+                  placeholder="Adicionar subtópico…"
+                  [attr.aria-label]="'Novo subtópico em ' + project.name"
+                  autocomplete="off"
+                  [value]="itemDraft(project.id)"
+                  (input)="onItemDraft(project.id, $event)"
+                />
+              </form>
             </div>
           }
         </li>

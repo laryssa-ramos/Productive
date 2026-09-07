@@ -93,6 +93,13 @@
             <span class="badge current">é a da vez</span>
           }
           <span class="item-actions">
+            <app-move-buttons
+              [label]="item.text"
+              [first]="$first"
+              [last]="$last"
+              (up)="move(item, -1)"
+              (down)="move(item, 1)"
+            />
             <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(item)">
               Editar
             </button>

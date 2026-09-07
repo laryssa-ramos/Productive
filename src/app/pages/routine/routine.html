@@ -41,6 +41,13 @@
           />
         } @else {
           <h2 class="block-name" (dblclick)="startRename(row.block)">{{ row.block.name }}</h2>
+          <app-move-buttons
+            [label]="'bloco ' + row.block.name"
+            [first]="$first"
+            [last]="$last"
+            (up)="moveBlock(row.block, -1)"
+            (down)="moveBlock(row.block, 1)"
+          />
           <span class="block-count">{{ row.done }}/{{ row.total }}</span>
         }
       </div>
@@ -82,6 +89,13 @@
                 {{ item.text }}
               </span>
               <span class="item-actions">
+                <app-move-buttons
+                  [label]="item.text"
+                  [first]="$first"
+                  [last]="$last"
+                  (up)="store.moveRoutineItem(row.block.id, item.id, -1)"
+                  (down)="store.moveRoutineItem(row.block.id, item.id, 1)"
+                />
                 <button
                   type="button"
                   class="btn btn-ghost btn-sm tiny"

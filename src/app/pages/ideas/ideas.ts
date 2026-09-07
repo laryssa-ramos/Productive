@@ -2,10 +2,11 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ProductivityStore } from '../../core/productivity-store';
 import { Idea } from '../../core/models';
+import { MoveButtons } from '../../shared/move-buttons/move-buttons';
 
 @Component({
   selector: 'app-ideas',
-  imports: [RouterLink],
+  imports: [RouterLink, MoveButtons],
   templateUrl: './ideas.html',
   styleUrl: './ideas.scss',
 })
@@ -17,6 +18,10 @@ export class IdeasPage {
   protected readonly editText = signal('');
   protected readonly showArchived = signal(false);
   protected readonly notice = signal<string | null>(null);
+
+  protected move(idea: Idea, direction: -1 | 1): void {
+    this.store.moveIdea(idea.id, direction, this.store.openIdeas().map((item) => item.id));
+  }
 
   protected onDraft(event: Event): void {
     this.draft.set((event.target as HTMLInputElement).value);

@@ -3,10 +3,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { GoalDraft, ProductivityStore } from '../../core/productivity-store';
 import { todayIso } from '../../core/date-utils';
 import { EVERY_DAY, Goal, WEEKDAYS } from '../../core/models';
+import { MoveButtons } from '../../shared/move-buttons/move-buttons';
 
 @Component({
   selector: 'app-goals',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, MoveButtons],
   templateUrl: './goals.html',
   styleUrl: './goals.scss',
 })
@@ -124,6 +125,10 @@ export class GoalsPage {
       this.store.addGoal(draft);
     }
     this.closeForm();
+  }
+
+  protected move(goal: Goal, direction: -1 | 1): void {
+    this.store.moveGoal(goal.id, direction, this.store.activeGoals().map((item) => item.id));
   }
 
   protected archive(goal: Goal): void {

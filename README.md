@@ -25,7 +25,8 @@ em vez de dar 404.
   fichas no topo para escolher quais aparecem — tarefas + pendências, ou projetos
   + rotina + ideias, ou tudo junto. A seleção fica salva, então a página abre
   do jeito que você deixou. Os itens são marcáveis ali mesmo: concluir tarefa e
-  pendência, marcar item de rotina, somar meta.
+  pendência, marcar item de rotina, marcar subtópico de projeto, somar meta. Os
+  projetos aparecem com os subtópicos aninhados embaixo.
 - **Tarefas** (`/tarefas`): criar, editar, concluir e excluir. Busca por texto,
   filtros por categoria/situação/prioridade, ordenação e dois modos de exibição
   (agrupado por categoria ou lista corrida).
@@ -41,9 +42,11 @@ em vez de dar 404.
   do dia; "Desmarcar tudo" serve para refazer um bloco no mesmo dia. Os itens são
   editáveis no lugar (botão **Editar** ao passar o mouse, ou duplo clique no
   texto), e os blocos aparecem no painel com o progresso de cada um.
-- **Projetos** (`/projetos`): a lista do que você está tocando agora. Só nome e,
-  se quiser, uma linha de descrição — sem prazo, sem tarefas penduradas, sem
-  cobrança. Cada projeto é **Em andamento**, **Pausado** ou **Concluído**, e os
+- **Projetos** (`/projetos`): a lista do que você está tocando agora. Nome, uma
+  linha de descrição opcional e uma lista de **subtópicos** — as partes do
+  projeto, marcáveis, com contador (`2/4`) na linha e recolhíveis pelo botão
+  "Subtópicos". Diferente da rotina, marcar um subtópico não zera na virada do
+  dia: é progresso, não hábito. Sem prazo, sem tarefas penduradas, sem cobrança. Cada projeto é **Em andamento**, **Pausado** ou **Concluído**, e os
   em andamento aparecem no painel, na faixa "Hoje". A cor sai da paleta em
   rodízio, para não virar mais uma decisão na hora de criar.
 - **Ideias** (`/ideias`): lista solta do que passou pela cabeça, no mesmo espírito
@@ -207,6 +210,30 @@ abrir em tela cheia, com ícone próprio, e continua funcionando sem internet.
 O service worker só liga no build de produção — em `npm start` ele fica
 desativado de propósito, para não servir arquivo velho enquanto você desenvolve.
 
+## Ordem manual
+
+Quase toda lista do app pode ser reordenada à mão pelas setas **↑ ↓** que
+aparecem ao passar o mouse (no celular ficam sempre visíveis): pendências,
+ideias, projetos, metas, blocos de rotina, itens dentro de cada bloco, e as
+mesmas listas dentro da página "Tudo".
+
+A ordem é a posição no próprio array — não existe campo `order` para manter em
+dia, e por isso não houve migração de dados.
+
+Duas regras que valem entender:
+
+- **Ordem manual e ordenação automática se excluem.** Tarefas ordenam por
+  prazo/prioridade/título, e mover à mão não teria efeito visível enquanto isso
+  acontece. Por isso a lista de tarefas ganhou a opção **"Ordem manual"** no
+  seletor de ordenação, e as setas só aparecem nesse modo. No modo agrupado por
+  categoria, mover acontece dentro do grupo.
+- **Na página "Tudo", tarefas não têm setas.** Ali elas aparecem por prazo, que é
+  o que faz aquela visão útil; a reordenação delas mora na página Tarefas.
+
+A função que move (`reorder`, em `productivity-store.ts`) recebe os ids
+**visíveis** e não o array cru. Sem isso, mover "para cima" numa lista filtrada
+pularia por cima de itens escondidos e o resultado pareceria aleatório.
+
 ## Cores
 
 O app é vermelho e nasce no tema escuro (o seletor de tema continua no menu).
@@ -297,7 +324,7 @@ mais tempo, para o que está encalhado aparecer mais. A escolha do dia fica
 gravada em `draw`, então recarregar a página não troca a sugestão — só o botão
 "agora não" troca, e a recusa vale apenas para aquele dia.
 
-O formato salvo está na versão 6. Dados gravados nas versões anteriores continuam
+O formato salvo está na versão 7. Dados gravados nas versões anteriores continuam
 sendo lidos: os campos que faltam entram vazios, tanto no localStorage quanto no
 que chega da nuvem.
 

@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProductivityStore, TaskDraft } from '../../core/productivity-store';
+import { MoveButtons } from '../../shared/move-buttons/move-buttons';
 import { describeDueDate, todayIso } from '../../core/date-utils';
 import {
   PRIORITY_LABELS,
@@ -16,7 +17,7 @@ import {
 
 type CategoryFilter = 'all' | 'none' | string;
 type StatusFilter = 'all' | 'open' | TaskStatus;
-type SortKey = 'created' | 'due' | 'priority' | 'title';
+type SortKey = 'manual' | 'created' | 'due' | 'priority' | 'title';
 type ViewMode = 'list' | 'grouped';
 
 interface TaskGroup {
@@ -30,7 +31,7 @@ const PRIORITY_WEIGHT: Record<TaskPriority, number> = { high: 0, medium: 1, low:
 
 @Component({
   selector: 'app-tasks',
-  imports: [ReactiveFormsModule, NgTemplateOutlet],
+  imports: [ReactiveFormsModule, NgTemplateOutlet, MoveButtons],
   templateUrl: './tasks.html',
   styleUrl: './tasks.scss',
 })
@@ -78,7 +79,8 @@ export class TasksPage {
       return true;
     });
 
-    return tasks.sort((a, b) => this.compare(a, b));
+    // Em ordem manual, a posição no array é a resposta — não há o que ordenar.
+    return this.sortKey() === 'manual' ? tasks : tasks.sort((a, b) => this.compare(a, b));
   });
 
   protected readonly groups = computed<TaskGroup[]>(() => {
@@ -202,6 +204,19 @@ export class TasksPage {
   /** O contexto de um ng-template chega como `any`; isto devolve o tipo real. */
   protected asTask(value: unknown): Task {
     return value as Task;
+  }
+
+  /** Só faz sentido reordenar à mão quando nada está reordenando por cima. */
+  protected get canReorder(): boolean {
+    return this.sortKey() === 'manual';
+  }
+
+  /**
+   * Move dentro do que está visível: no modo agrupado, dentro do grupo; na
+   * lista corrida, dentro da lista filtrada.
+   */
+  protected move(task: Task, direction: -1 | 1, scope: Task[]): void {
+    this.store.moveTask(task.id, direction, scope.map((item) => item.id));
   }
 
   protected onQuery(event: Event): void {

@@ -1,9 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
 import { ProductivityStore } from '../../core/productivity-store';
 import { RoutineBlock } from '../../core/models';
+import { MoveButtons } from '../../shared/move-buttons/move-buttons';
 
 @Component({
   selector: 'app-routine',
+  imports: [MoveButtons],
   templateUrl: './routine.html',
   styleUrl: './routine.scss',
 })
@@ -50,6 +52,14 @@ export class RoutinePage {
     const id = this.renamingId();
     if (id) this.store.renameRoutineBlock(id, this.renameText());
     this.renamingId.set(null);
+  }
+
+  protected moveBlock(block: RoutineBlock, direction: -1 | 1): void {
+    this.store.moveRoutineBlock(
+      block.id,
+      direction,
+      this.store.routines().map((item) => item.id),
+    );
   }
 
   protected removeBlock(block: RoutineBlock): void {
