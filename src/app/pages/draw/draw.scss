@@ -207,8 +207,17 @@
 }
 
 @media (max-width: 700px) {
+  /* Cinco controles não cabem ao lado do texto: ganham a própria linha. */
+  .item {
+    flex-wrap: wrap;
+  }
+
   .item-actions {
     opacity: 1;
+    width: 100%;
+    padding-left: 28px;
+    flex-wrap: wrap;
+    row-gap: 4px;
   }
 
   .turn-text {

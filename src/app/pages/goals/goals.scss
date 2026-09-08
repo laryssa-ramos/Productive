@@ -411,5 +411,7 @@
 
   .row-actions {
     margin-left: auto;
+    flex-wrap: wrap;
+    row-gap: 4px;
   }
 }

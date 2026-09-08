@@ -118,7 +118,12 @@
 }
 
 @media (max-width: 700px) {
-  .item {
+  /*
+   * O cabeçalho da linha é que precisa embrulhar — antes dos subtópicos era o
+   * próprio .item, e a regra ficou apontando para o lugar errado: o nome e os
+   * botões se espremiam na mesma linha e vazavam da tela.
+   */
+  .head {
     flex-wrap: wrap;
   }
 
@@ -126,6 +131,8 @@
     opacity: 1;
     width: 100%;
     padding-left: 18px;
+    flex-wrap: wrap;
+    row-gap: 4px;
   }
 }
 

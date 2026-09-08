@@ -196,8 +196,19 @@
 }
 
 @media (max-width: 640px) {
+  /* Sem hover, os botões precisam sair de cima do texto em vez de flutuar. */
+  .item {
+    flex-wrap: wrap;
+  }
+
   .item-actions {
+    position: static;
     opacity: 1;
     pointer-events: auto;
+    width: 100%;
+    padding-left: 27px;
+    background: none;
+    flex-wrap: wrap;
+    row-gap: 4px;
   }
 }

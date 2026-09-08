@@ -249,7 +249,50 @@
 }
 
 @media (max-width: 700px) {
+  /*
+   * No celular as fichas embrulhavam de qualquer jeito e o "Tudo/Nada" caía no
+   * meio da bagunça. Vira grade de colunas iguais, com as ações numa linha só.
+   */
   .picker {
     position: static;
+    flex-direction: column;
+    /* Coluna + wrap faz o flexbox tentar quebrar em colunas e sobrar altura. */
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .chips {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 6px;
+    /*
+     * Sem estes dois, o `flex: 1` herdado faz a caixa crescer na coluna e o
+     * grid distribui a sobra nas linhas — as fichas viram elipses altas.
+     */
+    flex: none;
+    align-content: start;
+  }
+
+  .chip {
+    justify-content: space-between;
+    align-self: start;
+    min-height: 32px;
+    padding: 6px 10px;
+  }
+
+  .picker-actions {
+    justify-content: flex-end;
+    padding-top: 2px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* A linha não deve empurrar a largura da tela; o texto encolhe primeiro. */
+  .row {
+    flex-wrap: wrap;
+  }
+
+  .due {
+    margin-left: auto;
   }
 }
