@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ProductivityStore } from '../../core/productivity-store';
 import { describeDueDate, fromIsoDate, todayIso } from '../../core/date-utils';
@@ -21,6 +21,12 @@ export class DashboardPage {
     // Abrir o painel já basta para existir uma pendência escolhida para hoje.
     this.store.ensureDraw();
   }
+
+  /** Campo de despejo do painel: escreve, Enter, e organiza depois. */
+  protected readonly ideaDraft = signal('');
+
+  /** Só as mais recentes: a lista inteira mora na página de Ideias. */
+  protected readonly recentIdeas = computed(() => this.store.openIdeas().slice(0, 6));
 
   protected readonly today = new Date().toLocaleDateString('pt-BR', {
     weekday: 'long',
@@ -97,6 +103,16 @@ export class DashboardPage {
 
     return [...dated, ...rest].slice(0, 8);
   });
+
+  protected onIdeaDraft(event: Event): void {
+    this.ideaDraft.set((event.target as HTMLInputElement).value);
+  }
+
+  protected addIdea(event: Event): void {
+    event.preventDefault();
+    if (!this.store.addIdea(this.ideaDraft())) return;
+    this.ideaDraft.set('');
+  }
 
   protected dueLabel(task: Task): string {
     return task.dueDate ? describeDueDate(task.dueDate) : '';

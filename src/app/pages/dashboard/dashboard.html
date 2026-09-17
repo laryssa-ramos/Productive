@@ -6,7 +6,11 @@
   <a routerLink="/tarefas" class="btn btn-primary">Nova tarefa</a>
 </header>
 
-@if (store.summary().total === 0 && store.activeGoals().length === 0) {
+@if (
+  store.summary().total === 0 &&
+  store.activeGoals().length === 0 &&
+  store.openIdeas().length === 0
+) {
   <section class="card onboarding">
     <h2>Comece por aqui</h2>
     <p>
@@ -18,6 +22,7 @@
       <a routerLink="/metas" class="btn">Criar uma meta diária</a>
       <a routerLink="/sorteio" class="btn">Despejar pendências</a>
       <a routerLink="/projetos" class="btn">Listar projetos</a>
+      <a routerLink="/ideias" class="btn">Guardar ideias</a>
       <a routerLink="/categorias" class="btn">Ajustar categorias</a>
     </div>
   </section>
@@ -49,6 +54,48 @@
         <div class="kpi-fill" [style.width.%]="store.summary().percentDone"></div>
       </div>
     </article>
+  </section>
+
+  <section class="card dump">
+    <form class="dump-form" (submit)="addIdea($event)">
+      <input
+        class="input"
+        placeholder="O que está na sua cabeça? Escreva e dê Enter."
+        aria-label="Nova ideia"
+        autocomplete="off"
+        [value]="ideaDraft()"
+        (input)="onIdeaDraft($event)"
+      />
+      <button type="submit" class="btn btn-primary" [disabled]="ideaDraft().trim().length === 0">
+        Guardar
+      </button>
+    </form>
+
+    @if (recentIdeas().length > 0) {
+      <ul class="dump-list">
+        @for (idea of recentIdeas(); track idea.id) {
+          <li>
+            <span class="bullet" aria-hidden="true"></span>
+            <span class="dump-text">{{ idea.text }}</span>
+          </li>
+        }
+      </ul>
+
+      <p class="dump-foot">
+        <a routerLink="/ideias">
+          @if (store.ideaSummary().open > recentIdeas().length) {
+            Ver as {{ store.ideaSummary().open }} ideias e organizar
+          } @else {
+            Organizar as ideias
+          }
+        </a>
+      </p>
+    } @else {
+      <p class="dump-hint">
+        Joga tudo aqui sem decidir onde encaixa. Depois, em Ideias, cada uma pode virar
+        tarefa ou projeto.
+      </p>
+    }
   </section>
 
   <p class="band-label">Hoje</p>

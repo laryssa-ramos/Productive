@@ -49,7 +49,10 @@ em vez de dar 404.
   dia: é progresso, não hábito. Sem prazo, sem tarefas penduradas, sem cobrança. Cada projeto é **Em andamento**, **Pausado** ou **Concluído**, e os
   em andamento aparecem no painel, na faixa "Hoje". A cor sai da paleta em
   rodízio, para não virar mais uma decisão na hora de criar.
-- **Ideias** (`/ideias`): lista solta do que passou pela cabeça, no mesmo espírito
+- **Ideias** (`/ideias`): lista solta do que passou pela cabeça. O campo de captura
+  também fica no topo do painel, acima das tarefas, para despejar sem precisar
+  navegar até aqui — a organização (virar tarefa, virar projeto) acontece nesta
+  página, no mesmo espírito
   das pendências — só que nada aqui precisa ser feito. Cada ideia pode **virar
   tarefa** ou **virar projeto** (aí ela sai da lista, porque o registro passa a ser
   a tarefa ou o projeto), ser **guardada** para sair da frente sem sumir, ou

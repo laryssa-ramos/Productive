@@ -604,3 +604,79 @@
 .routine-block.is-full .routine-name {
   color: var(--text-3);
 }
+
+/* ------------------------------------------------- caixa de despejo (ideias) */
+
+.dump {
+  padding: 14px 16px;
+  margin-top: 14px;
+}
+
+.dump-form {
+  display: flex;
+  gap: 8px;
+
+  .input {
+    flex: 1;
+    min-height: 38px;
+  }
+}
+
+.dump-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    font-size: 13px;
+  }
+}
+
+.bullet {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+
+.dump-text {
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dump-foot {
+  margin: 10px 0 0;
+  font-size: 12px;
+
+  a {
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.dump-hint {
+  margin: 10px 0 0;
+  color: var(--text-3);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 700px) {
+  .dump-list {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
