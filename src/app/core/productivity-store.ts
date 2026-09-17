@@ -697,10 +697,13 @@ export class ProductivityStore {
 
   // ------------------------------------------------------------------ ideias
 
+  /**
+   * Sem ordenação: a posição no array é a ordem, senão as setas de reordenar não
+   * teriam efeito nenhum — a lista voltaria a se ordenar por data a cada leitura.
+   * "Mais recente primeiro" continua valendo porque `addIdea` insere no topo.
+   */
   readonly openIdeas = computed(() =>
-    this._ideas()
-      .filter((idea) => idea.archivedAt === null)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    this._ideas().filter((idea) => idea.archivedAt === null),
   );
 
   readonly archivedIdeas = computed(() =>

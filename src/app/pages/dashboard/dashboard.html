@@ -82,13 +82,32 @@
       </ul>
 
       <p class="dump-foot">
-        <a routerLink="/ideias">
-          @if (store.ideaSummary().open > recentIdeas().length) {
-            Ver as {{ store.ideaSummary().open }} ideias e organizar
-          } @else {
-            Organizar as ideias
-          }
-        </a>
+        <span class="peek">
+          <a routerLink="/ideias" [attr.aria-describedby]="'ideias-completas'">
+            @if (store.ideaSummary().open > recentIdeas().length) {
+              Ver as {{ store.ideaSummary().open }} ideias e organizar
+            } @else {
+              Organizar as ideias
+            }
+          </a>
+
+          <span class="peek-panel" id="ideias-completas" role="tooltip">
+            <span class="peek-box">
+              <span class="peek-title">
+                Todas as ideias
+                <span class="peek-count">{{ store.ideaSummary().open }}</span>
+              </span>
+              <ul class="peek-list">
+                @for (idea of store.openIdeas(); track idea.id) {
+                  <li>
+                    <span class="bullet" aria-hidden="true"></span>
+                    {{ idea.text }}
+                  </li>
+                }
+              </ul>
+            </span>
+          </span>
+        </span>
       </p>
     } @else {
       <p class="dump-hint">
